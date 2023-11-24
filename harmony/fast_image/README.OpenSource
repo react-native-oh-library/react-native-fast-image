@@ -1,0 +1,11 @@
+[
+    {
+        "Name": "react-native-fast-image",
+        "License": "MIT License",
+        "License File": "https://github.com/DylanVann/react-native-fast-image/blob/v8.6.3/LICENSE",
+        "Version Number": "8.6.3",
+        "Owner" : "Dylan Vann <dylan@dylanvann.com>"
+        "Upstream URL": "https://github.com/DylanVann/react-native-fast-image",
+        "Description": "FastImage, performant React Native image component."
+    }
+]
