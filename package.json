@@ -50,7 +50,6 @@
         "bob": "bob build",
         "prepack": "bob build",
         "prepare": "npm run bob && husky install",
-        "build": "dv-scripts build && cp src/FastImageViewNativeComponent.ts dist/FastImageViewNativeComponent.ts && cp src/NativeFastImage.ts dist/NativeFastImage.ts",
         "lint": "dv-scripts lint",
         "release": "dv-scripts release",
         "test": "dv-scripts test"
