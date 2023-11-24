@@ -1,0 +1,7 @@
+{
+  module: {
+    name: 'fast_image',
+    type: 'har',
+    deviceTypes: ['default'],
+  },
+}
