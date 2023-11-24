@@ -25,9 +25,6 @@
     "typings": "lib/typescript/index.d.ts",
     "react-native": "src/index",
     "source": "src/index",
-    "harmony": {
-        "alias": "react-native-fast-image"
-    },
     "files": [
         "src",
         "lib",
