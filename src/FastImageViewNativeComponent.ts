@@ -31,7 +31,6 @@ import type {
 import type { 
     WithDefault, 
     DirectEventHandler, 
-    Float, 
     Int32} from "react-native/Libraries/Types/CodegenTypes";
 
 export type ResizeMode = 'contain' | 'cover' | 'stretch' | 'center';
@@ -68,9 +67,6 @@ export interface FastImageProps extends ViewProps {
     source?: Source
     resizeMode?: WithDefault<ResizeMode, 'cover'>
     fallback?: boolean
-    isWebpGif?: boolean
-    resizeWidth?: Float
-    imgStyleHeight?: Float
     onLoadStart?: DirectEventHandler<OnLoadStartEventData>;
 
     onProgress?: DirectEventHandler<OnProgressEventData>;

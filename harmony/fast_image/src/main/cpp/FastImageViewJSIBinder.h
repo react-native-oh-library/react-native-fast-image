@@ -31,9 +31,6 @@ namespace rnoh{
     {
       auto object = ViewComponentJSIBinder::createNativeProps(rt);
       object.setProperty(rt,"source","string");
-      object.setProperty(rt,"isWebpGif","boolean");
-      object.setProperty(rt,"resizeWidth","float");
-      object.setProperty(rt,"imgStyleHeight","float");
       object.setProperty(rt,"resizeMode","string");
       object.setProperty(rt,"headers","string");
       object.setProperty(rt,"priority","string");

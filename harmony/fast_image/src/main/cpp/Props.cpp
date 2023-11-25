@@ -21,9 +21,6 @@ FastImageViewProps::FastImageViewProps(
     const RawProps &rawProps): ViewProps(context, sourceProps, rawProps),
 
     source(convertRawProp(context, rawProps, "source", sourceProps.source, {})),
-    isWebpGif(convertRawProp(context, rawProps, "isWebpGif", sourceProps.isWebpGif, {false})),
-    resizeWidth(convertRawProp(context, rawProps, "resizeWidth", sourceProps.resizeWidth, {})),
-    imgStyleHeight(convertRawProp(context, rawProps, "imgStyleHeight", sourceProps.imgStyleHeight, {})),
     resizeMode(convertRawProp(context, rawProps, "resizeMode", sourceProps.resizeMode, {ResizeMode::COVER})),
     defaultSource(convertRawProp(context, rawProps, "defaultSource", sourceProps.defaultSource, {})),
     tintColor(convertRawProp(context, rawProps, "tintColor", sourceProps.tintColor, {}))
