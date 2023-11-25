@@ -41,9 +41,6 @@ namespace rnoh{
               .addProperty("priority",props->source.priority)
               .addProperty("cache",props->source.cache)
               .addProperty("tintColor",props->tintColor)
-              .addProperty("isWebpGif",props->isWebpGif)
-              .addProperty("resizeWidth",props->resizeWidth)
-              .addProperty("imgStyleHeight",props->imgStyleHeight)
               .addProperty("resizeMode",static_cast<int>(props->resizeMode))
               .addProperty("defaultSource",props->defaultSource.uri)
               .build();

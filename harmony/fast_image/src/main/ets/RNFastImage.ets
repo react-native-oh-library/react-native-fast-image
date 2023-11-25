@@ -33,9 +33,6 @@ export const FAST_IMAGE_TYPE = "FastImageView"
 
 export interface FastImageProps extends ViewBaseProps {
   source: string
-  isWebpGif: boolean
-  resizeWidth: number // 图片缩放宽
-  imgStyleHeight: number // 图片缩放高
   resizeMode: number
   headers: string
   priority: string
@@ -163,10 +160,6 @@ export struct RNFastImage {
       .interpolation(ImageInterpolation.High)
       .width("100%")
       .height("100%")
-      .sourceSize(this.descriptor.props.resizeMode === 2 ? {
-        width: vp2px(this.descriptor.props.resizeWidth),
-        height: vp2px(this.descriptor.props.imgStyleHeight)
-      } : { width: 0, height: 0 })
       .alt(this.getSource(this.descriptor.props.defaultSource))
       .onComplete((event) => {
         if (event) {

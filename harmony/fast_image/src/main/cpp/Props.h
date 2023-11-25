@@ -116,9 +116,6 @@ class JSI_EXPORT FastImageViewProps final : public ViewProps {
 
 #pragma mark - Props
     FastImageViewSourceStruct source{};
-    bool isWebpGif{false};
-    facebook::react::Float resizeWidth{};
-    facebook::react::Float imgStyleHeight{};
     ResizeMode resizeMode{ResizeMode::COVER};
     SharedColor tintColor{};
     FastImageViewSourceStruct defaultSource{};
