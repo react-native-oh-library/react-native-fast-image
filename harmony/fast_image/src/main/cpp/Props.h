@@ -25,7 +25,7 @@ static inline std::string getHeaders(const PropsParserContext& context, const Ra
         std::string itemValue;
         headers = "{";
         for (auto iter = map.begin(); iter != map.end(); iter++) {
-            fromRawValue(context, iter->second, itemVaule);
+            fromRawValue(context, iter->second, itemValue);
             if (iter != map.begin()) {
                 headers += ",";
             }
@@ -52,7 +52,7 @@ static inline void fromRawValue(const PropsParserContext& context,
     }
     auto tmp_headers = map.find("headers");
     if (tmp_headers != map.end()) {
-        result.headers = getHeaders(context, tmp_headers->second)
+        result.headers = getHeaders(context, tmp_headers->second);
     }
     auto tmp_priority = map.find("priority");
     if (tmp_priority != map.end()) {
@@ -73,7 +73,7 @@ enum class ResizeMode {
 inline void fromRawValue(const PropsParserContext& context, const RawValue &value, ResizeMode &result)
 {
     react_native_expect(value.hasType<std::string>());
-    if (!value.hasType<std::string>) {
+    if (!value.hasType<std::string>()) {
         LOG(ERROR) << "Unsupported ResizeMode type";
         result = ResizeMode::COVER;
         return;
