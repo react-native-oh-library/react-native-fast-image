@@ -71,8 +71,10 @@ export struct RNFastImage {
         })
         if (this.redirectUri && this.redirectUri != this.descriptor.props.source) {
           this.redirect = true
+          return
         }
       }
+      this.onError()
     });
   }
 
@@ -87,6 +89,7 @@ export struct RNFastImage {
             imageSource.getImageInfo((err, value) => {
               if (err) {
                 Logger.error("RNOH in getImageInfo err:")
+                this.onError();
                 return;
               }
               let hValue = Math.round(value.size.height );
@@ -102,6 +105,7 @@ export struct RNFastImage {
               imageSource.createPixelMap(options, (err, pixelMap) => {
                 if (err) {
                   Logger.error(`RNOH in createPixelMap err: `);
+                  this.onError();
                 } else {
                   this.pixelMap = pixelMap
                 }
@@ -110,6 +114,7 @@ export struct RNFastImage {
           }
         } else {
           Logger.error(`RNOH in RNFastImage http reqeust failed with. Code: ${error.code}, message: ${error.message}`);
+          this.onError();
         }
       }
     )
@@ -163,16 +168,22 @@ export struct RNFastImage {
       .alt(this.getSource(this.descriptor.props.defaultSource))
       .onComplete((event) => {
         if (event) {
-          this.onLoad(event.width, event.height);
           if (event.loadingStatus) {
             this.onLoadEnd();
             this.onProgress(1, 1);
+          } else {
+            this.onLoad(event.width, event.height);
           }
         }
       })
       .onError((event) => {
-        this.onError();
-        this.onProgress(0, 1);
+        if (this.descriptor.props.headers.length == 0) {
+          if (!this.descriptor.props.source.startsWith("file://") && !this.descriptor.props.source.startsWith("asset://") && !this.redirect) {
+            this.request()
+          } else {
+            this.onError();
+          }
+        }
       })
       .objectFit(this.transResizeModeForImage(this.descriptor.props.resizeMode))
       .colorFilter(this.getColorArr(this.descriptor.props.tintColor))
@@ -215,6 +226,7 @@ export struct RNFastImage {
   }
 
   onLoad(width: number, height: number) {
+    Logger.debug(`RNOH in RNFastImage onLoad,${this.tag}`);
     this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, FAST_IMAGE_TYPE, {
       type: "onLoad",
       width: width,
@@ -223,10 +235,9 @@ export struct RNFastImage {
   }
 
   onError() {
-    if (!this.descriptor.props.source.startsWith("file://") && !this.descriptor.props.source.startsWith("asset://")) {
-      this.request()
-    }
+    Logger.error(`RNOH in RNFastImage onError,${this.tag}`);
     this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, FAST_IMAGE_TYPE, { type: "onError" })
+    this.onProgress(0, 1);
   }
 
   onLoadEnd() {

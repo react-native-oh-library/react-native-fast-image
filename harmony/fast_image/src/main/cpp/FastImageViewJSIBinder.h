@@ -35,7 +35,7 @@ namespace rnoh{
       object.setProperty(rt,"headers","string");
       object.setProperty(rt,"priority","string");
       object.setProperty(rt,"cache","string");
-      object.setProperty(rt,"tintColor","string");
+      object.setProperty(rt,"tintColor","Color");
       object.setProperty(rt,"defaultSource","string");
       return object;
     }

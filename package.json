@@ -1,6 +1,6 @@
 {
     "name": "@react-native-oh-tpl/react-native-fast-image",
-    "version": "8.6.3-0.0.2",
+    "version": "8.6.3-0.0.3",
     "description": "🚩 FastImage, performant React Native image component.",
     "keywords": [
         "cache",
