@@ -1,19 +1,19 @@
-/**
+/*
  * MIT License
- * 
+ *
  * Copyright (C) 2023 Huawei Device Co., Ltd.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANT KIND, EXPRESS OR
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -58,52 +58,53 @@ FastImageEventType getFastImageEventType(ArkJS &arkJs, napi_value eventObject)
 }
 
 class FastImageEventEmitRequestHandler : public EventEmitRequestHandler {
-    public:
-        void handleEvent(EventEmitRequestHandler::Context const &ctx) override {
-            if (ctx.eventName != "FastImageView") {
-                return;
-            }
-            ArkJS arkJs(ctx.env);
-            auto eventEmitter = ctx.shadowViewRegistry->getEventEmitter<react::FastImageViewEventEmitter>(ctx.tag);
-            if (eventEmitter == nullptr) {
-                return;
-            }
+public:
+    void handleEvent(EventEmitRequestHandler::Context const &ctx) override
+    {
+        if (ctx.eventName != "FastImageView") {
+            return;
+        }
+        ArkJS arkJs(ctx.env);
+        auto eventEmitter = ctx.shadowViewRegistry->getEventEmitter<react::FastImageViewEventEmitter>(ctx.tag);
+        if (eventEmitter == nullptr) {
+            return;
+        }
 
-            switch (getFastImageEventType(arkJs,ctx.payload)) {
-              case FastImageEventType::FAST_IMAGE_LOAD_START: {
+        switch (getFastImageEventType(arkJs, ctx.payload)) {
+            case FastImageEventType::FAST_IMAGE_LOAD_START: {
                 react::FastImageViewEventEmitter::OnLoadStart event{};
                 eventEmitter->onLoadStart(event);
                 break;
-              }
-              case FastImageEventType::FAST_IMAGE_PROGRESS: {
+            }
+            case FastImageEventType::FAST_IMAGE_PROGRESS: {
                 int loaded = (int)arkJs.getDouble(arkJs.getObjectProperty(ctx.payload, "loaded"));
                 int total = (int)arkJs.getDouble(arkJs.getObjectProperty(ctx.payload, "total"));
                 
                 react::FastImageViewEventEmitter::OnProgress event{loaded, total};
                 eventEmitter->onProgress(event);
                 break;
-              }
-              case FastImageEventType::FAST_IMAGE_LOAD: {
+            }
+            case FastImageEventType::FAST_IMAGE_LOAD: {
                 int width = (int)arkJs.getDouble(arkJs.getObjectProperty(ctx.payload, "width"));
                 int height = (int)arkJs.getDouble(arkJs.getObjectProperty(ctx.payload, "height"));
                 
                 react::FastImageViewEventEmitter::OnLoad event{width, height};
                 eventEmitter->onLoad(event);
                 break;
-              }
-              case FastImageEventType::FAST_IMAGE_ERROR:{
+            }
+            case FastImageEventType::FAST_IMAGE_ERROR:{
                 react::FastImageViewEventEmitter::OnError event{};
                 eventEmitter->onError(event);
                 break;
-              }
-              case FastImageEventType::FAST_IMAGE_LOAD_END:{
+            }
+            case FastImageEventType::FAST_IMAGE_LOAD_END:{
                 react::FastImageViewEventEmitter::OnLoadEnd event{};
                 eventEmitter->onLoadEnd(event);
                 break;
-              }
-              default:
-                break;
             }
-        };
+            default:
+                break;
+        }
+    };
 };
 } // namespace rnoh
