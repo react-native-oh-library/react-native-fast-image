@@ -1,6 +1,6 @@
 {
     "name": "@react-native-oh-tpl/react-native-fast-image",
-    "version": "8.6.3-0.0.4",
+    "version": "8.6.3-0.0.5",
     "description": "🚩 FastImage, performant React Native image component.",
     "keywords": [
         "cache",
@@ -13,6 +13,9 @@
     "homepage": "https://github.com/DylanVann/react-native-fast-image#readme",
     "bugs": {
         "url": "https://github.com/DylanVann/react-native-fast-image/issues"
+    },
+    "harmony": {
+        "alias": "react-native-fast-image"
     },
     "repository": {
         "type": "git",
@@ -110,6 +113,10 @@
           }
         ]
       ]
+    },
+    "publishConfig": {
+      "registry": "https://registry.npmjs.org",
+      "access": "public"
     },
     "codegenConfig": {
       "name": "RNFastImageSpec",
