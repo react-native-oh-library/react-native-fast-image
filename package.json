@@ -1,6 +1,6 @@
 {
     "name": "@react-native-oh-tpl/react-native-fast-image",
-    "version": "8.6.3-0.0.5",
+    "version": "8.6.3-0.0.6",
     "description": "🚩 FastImage, performant React Native image component.",
     "keywords": [
         "cache",
@@ -14,9 +14,6 @@
     "bugs": {
         "url": "https://github.com/DylanVann/react-native-fast-image/issues"
     },
-    "harmony": {
-        "alias": "react-native-fast-image"
-    },
     "repository": {
         "type": "git",
         "url": "https://github.com/react-native-oh-library/react-native-fast-image.git"
@@ -25,22 +22,12 @@
     "author": "Dylan Vann <dylan@dylanvann.com> (https://dylanvann.com)",
     "main": "lib/commonjs/index",
     "module": "lib/module/index",
-    "typings": "lib/typescript/index.d.ts",
-    "react-native": "src/index",
     "source": "src/index",
+    "typings": "lib/typescript/index.d.ts",
     "files": [
         "src",
         "lib",
-        "android",
-        "!android/build",
-        "ios",
-        "!ios/build",
-        "harmony/fast_image.har",
-        "harmony/fast_image",
-        "!harmony/build",
-        "!harmony/oh_modules",
-        "dist",
-        "RNFastImage.podspec",
+        "harmony",
         "!**/__tests__",
         "!**/__fixtures__",
         "!**/__mocks__",
@@ -76,7 +63,10 @@
     },
     "resolutions": {
         "@jest/create-cache-key-function": "^27",
-        "@types/react": "17.0.43" 
+        "@types/react": "17.0.43"
+    },
+    "dependencies": {
+        "react-native-fast-image": "8.6.3"
     },
     "devDependencies": {
         "@babel/core": "^7.14.6",
@@ -87,9 +77,9 @@
         "@types/react-test-renderer": "^17.0.1",
         "dv-scripts": "^1.6.0",
         "eslint-config-dv-scripts": "^1.1.1",
+        "husky": "^8.0.1",
         "metro-react-native-babel-preset": "^0.66.1",
         "prettier": "^2.3.2",
-        "husky": "^8.0.1",
         "react": "18.2.0",
         "react-native": "0.71.3",
         "react-native-builder-bob": "^0.20.4",
@@ -100,27 +90,31 @@
         "react": "^17 || ^18",
         "react-native": ">=0.60.0"
     },
-    "react-native-builder-bob": {
-      "source": "src",
-      "output": "lib",
-      "targets": [
-        "commonjs",
-        "module",
-        [
-          "typescript",
-          {
-            "project": "tsconfig.build.json"
-          }
-        ]
-      ]
-    },
     "publishConfig": {
-      "registry": "https://registry.npmjs.org/",
-      "access": "public"
+        "access": "public",
+        "registry": "https://registry.npmjs.org/"
     },
     "codegenConfig": {
-      "name": "RNFastImageSpec",
-      "type": "all",
-      "jsSrcsDir": "src"
+        "name": "RNFastImageSpec",
+        "type": "all",
+        "jsSrcsDir": "src"
+    },
+    "harmony": {
+        "alias": "react-native-fast-image"
+    },
+    "react-native": "src/index",
+    "react-native-builder-bob": {
+        "source": "src",
+        "output": "lib",
+        "targets": [
+            "commonjs",
+            "module",
+            [
+                "typescript",
+                {
+                    "project": "tsconfig.build.json"
+                }
+            ]
+        ]
     }
 }
