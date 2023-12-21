@@ -22,13 +22,23 @@
  * SOFTWARE.
  */
 
-import { Descriptor, ComponentBuilderContext, RNOHContext, ViewBaseProps, ColorSegments } from 'rnoh'
+import {
+  Descriptor,
+  ViewDescriptorWrapperBase,
+  ViewBaseDescriptor,
+  ViewRawProps,
+  RNViewManager,
+  RNOHContext,
+  ViewBaseProps,
+  ColorSegments
+} from 'rnoh'
+
 import http from '@ohos.net.http';
 import ResponseCode from '@ohos.net.http';
 import image from '@ohos.multimedia.image';
 import { ImageLoaderTurboModule } from 'rnoh/src/main/ets/RNOHCorePackage/turboModules';
 import Logger from './Logger'
-
+import {FastImageModifier} from './FastImageModifier'
 export const FAST_IMAGE_TYPE = "FastImageView"
 
 export interface FastImageProps extends ViewBaseProps {
@@ -41,42 +51,27 @@ export interface FastImageProps extends ViewBaseProps {
   defaultSource: string
 }
 
-export type FastImageViewDescriptor = Descriptor<"FastImageView", FastImageProps>
+interface FastImageState {}
+interface FastImageRawProps extends ViewRawProps {
+  alt: string
+}
+export type FastImageViewDescriptor = Descriptor<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>
+
+export class FastImageDescriptorWrapper extends ViewDescriptorWrapperBase<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>{
+}
 
 @Component
 export struct RNFastImage {
   ctx!: RNOHContext
   tag: number = 0
-  @BuilderParam buildCustomComponent: (componentBuilderContext: ComponentBuilderContext) => void
   @State descriptor: FastImageViewDescriptor = {} as FastImageViewDescriptor
   private unregisterDescriptorChangesListener?: () => void = undefined
-  @State redirectUri: string | undefined = undefined
-  @State redirect: boolean = false
-  @State pixelMap: PixelMap | undefined = undefined
+  public componentManager!:RNViewManager;
+  @State descriptorWrapper :FastImageDescriptorWrapper | undefined = undefined
+  private unregisterComponentManager?: () => void = undefined
+  private unregisterCommandCallback?: () => void = undefined
 
-  /**
-   * 处理重定向图片
-   */
-  request() {
-    let httpRequest = http.createHttp();
-    httpRequest.request(this.descriptor.props.source, {
-      header: { 'Content-Type': 'application/json' },
-    }, (err, data) => {
-      if (!err) {
-        let header: string = JSON.stringify(data?.header);
-        JSON.parse(header, (key: string, value: string) => {
-          if (key == "location") {
-            this.redirectUri = value;
-          }
-        })
-        if (this.redirectUri && this.redirectUri != this.descriptor.props.source) {
-          this.redirect = true
-          return
-        }
-      }
-      this.onError()
-    });
-  }
+  @State pixelMap: PixelMap | undefined = undefined
 
   requestWithHeaders() {
     http.createHttp().request(this.descriptor.props.source, { header:JSON.parse(this.descriptor.props.headers) },
@@ -121,14 +116,12 @@ export struct RNFastImage {
   }
 
   aboutToAppear() {
+    this.initComponent()
     this.descriptor = this.ctx.descriptorRegistry.getDescriptor<FastImageViewDescriptor>(this.tag)
     this.unregisterDescriptorChangesListener = this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
       (newDescriptor) => {
         this.descriptor = (newDescriptor as FastImageViewDescriptor)
-        if (this.redirectUri) {
-          this.redirect = false
-          this.redirectUri = undefined
-        }
+        this.setDescriptor(this.descriptor)
         Logger.debug(`RNOH in RNFastImage newDescriptor props tag,${this.tag} ${JSON.stringify(this.descriptor.props)}`);
       }
     )
@@ -141,30 +134,34 @@ export struct RNFastImage {
 
   aboutToDisappear() {
     this.unregisterDescriptorChangesListener?.()
+    this.unregisterComponentManager?.()
+    this.unregisterCommandCallback?.()
   }
 
-  getColorArr(color: ColorSegments) {
-    if (color == undefined) {
-      return [
-        1, 0, 0, 0, 0,
-        0, 1, 0, 0, 0,
-        0, 0, 1, 0, 0,
-        0, 0, 0, 1, 0,
-      ]
+  initComponent() {
+    let descriptor = this.ctx.descriptorRegistry.getDescriptor<ViewBaseDescriptor>(this.tag)
+    if (!this.componentManager) {
+      this.componentManager = new RNViewManager(this.tag, this.ctx)
     }
-    return [
-      0, 0, 0, color[0], 0,
-      0, 0, 0, color[1], 0,
-      0, 0, 0, color[2], 0,
-      0, 0, 0, color[3], 0,
-    ]
+    this.unregisterComponentManager = this.ctx.componentManagerRegistry.registerComponentManager(this.tag, this.componentManager)
+    this.setDescriptor(descriptor)
+    const parentTag = descriptor.parentTag
+    this.componentManager.setParentTag(parentTag)
+    this.unregisterDescriptorChangesListener = this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
+      (newDescriptor) => {
+        this.setDescriptor(newDescriptor)
+      }
+    )
+  }
+
+  setDescriptor(descriptor:ViewBaseDescriptor) {
+    this.descriptorWrapper = new FastImageDescriptorWrapper(descriptor)
   }
 
   build() {
-    Image(this.descriptor.props.headers.length > 0 ? this.pixelMap : (this.redirect ? this.redirectUri : this.getSource(this.descriptor.props.source)))
+    Image(this.descriptor.props.headers.length > 0 ? this.pixelMap : this.getSource(this.descriptor.props.source))
+      .attributeModifier(FastImageModifier.getInstance().setDescriptor(this.descriptor, this.descriptorWrapper))
       .interpolation(ImageInterpolation.High)
-      .width("100%")
-      .height("100%")
       .alt(this.getSource(this.descriptor.props.defaultSource))
       .onComplete((event) => {
         if (event) {
@@ -178,28 +175,10 @@ export struct RNFastImage {
       })
       .onError((event) => {
         if (this.descriptor.props.headers.length == 0) {
-          if (!this.descriptor.props.source.startsWith("file://") && !this.descriptor.props.source.startsWith("asset://") && !this.redirect) {
-            this.request()
-          } else {
-            this.onError();
-          }
+          this.onError();
         }
       })
-      .objectFit(this.transResizeModeForImage(this.descriptor.props.resizeMode))
-      .colorFilter(this.getColorArr(this.descriptor.props.tintColor))
-  }
-
-  transResizeModeForImage(resizeMode: number) {
-    if (resizeMode === 0) {
-      return ImageFit.Cover;
-    } else if (resizeMode === 1) {
-      return ImageFit.Contain;
-    } else if (resizeMode === 2) {
-      return ImageFit.Fill;
-    } else if (resizeMode === 3) {
-      return ImageFit.None;
-    }
-    return ImageFit.Cover;
+      .id(this.tag.toString())
   }
 
   getSource(source: string) {
