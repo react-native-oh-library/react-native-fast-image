@@ -160,7 +160,7 @@ export struct RNFastImage {
 
   build() {
     Image(this.descriptor.props.headers.length > 0 ? this.pixelMap : this.getSource(this.descriptor.props.source))
-      .attributeModifier(FastImageModifier.getInstance().setDescriptor(this.descriptor, this.descriptorWrapper))
+      .attributeModifier(FastImageModifier.getInstance().setDescriptor(this.descriptor, this.descriptorWrapper as FastImageDescriptorWrapper))
       .interpolation(ImageInterpolation.High)
       .alt(this.getSource(this.descriptor.props.defaultSource))
       .onComplete((event) => {
