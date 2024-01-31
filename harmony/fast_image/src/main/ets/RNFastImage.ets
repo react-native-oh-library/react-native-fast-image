@@ -162,6 +162,7 @@ export struct RNFastImage {
     Image(this.descriptor.props.headers.length > 0 ? this.pixelMap : this.getSource(this.descriptor.props.source))
       .attributeModifier(FastImageModifier.getInstance().setDescriptor(this.descriptor, this.descriptorWrapper as FastImageDescriptorWrapper))
       .interpolation(ImageInterpolation.High)
+      .draggable(false)
       .alt(this.getSource(this.descriptor.props.defaultSource))
       .onComplete((event) => {
         if (event) {
