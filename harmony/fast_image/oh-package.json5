@@ -6,7 +6,7 @@
   "name": "rnoh-fast-image",
   "description": "",
   "main": "index.ets",
-  "version": "0.0.1",
+  "version": "8.6.3-0.1.2",
   "dependencies": {
     "rnoh": "file:../rnoh"
   }
