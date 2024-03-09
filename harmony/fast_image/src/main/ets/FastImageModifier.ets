@@ -110,7 +110,7 @@ export class FastImageModifier implements AttributeModifier<ImageAttribute>{
       instance.shadow(this.descriptorWrapper?.shadow)
     }
 
-    if(this.descriptor.rawProps.alt) {
+    if(this.descriptor.rawProps?.alt) {
       instance.accessibilityText(this.descriptor.rawProps.alt)
     }
     if(this.getResizeMode(this.descriptor.props.resizeMode) !== ImageFit.Cover) {

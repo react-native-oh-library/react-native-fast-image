@@ -1,6 +1,6 @@
 {
   module: {
-    name: 'fast_image',
+    name: 'fast_image_imageknife',
     type: 'har',
     deviceTypes: ['default'],
   },

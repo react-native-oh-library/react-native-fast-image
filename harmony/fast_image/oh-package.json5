@@ -6,8 +6,9 @@
   "name": "rnoh-fast-image",
   "description": "",
   "main": "index.ets",
-  "version": "0.0.1",
+  "version": "0.1.1-imageknife",
   "dependencies": {
-    "rnoh": "file:../rnoh"
+    "rnoh": "file:../libs/rnoh-4.1.0.300.har",
+    "@ohos/imageknife": "^2.1.2-rc.9"
   }
 }
