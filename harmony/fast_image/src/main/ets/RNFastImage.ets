@@ -59,6 +59,7 @@ interface FastImageRawProps extends ViewRawProps {
 export type FastImageViewDescriptor = Descriptor<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>
 
 export class FastImageDescriptorWrapper extends ViewDescriptorWrapperBase<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>{
+  transformStringify: string = "0";
 }
 
 class ImageSourceHolder {
