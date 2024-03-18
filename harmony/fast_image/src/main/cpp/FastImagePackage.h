@@ -38,9 +38,9 @@ class FastImageComponentInstanceFactoryDelegate : public ComponentInstanceFactor
 public:
     using ComponentInstanceFactoryDelegate::ComponentInstanceFactoryDelegate;
 
-    ComponentInstance::Shared create(ComponentInstanceFactoryContext ctx) override {
+    ComponentInstance::Shared create(ComponentInstance::Context ctx) override {
         if (ctx.componentName == "FastImageView") {
-            return std::make_shared<ArkTSComponentInstance>(m_ctx, ctx.tag);
+            return std::make_shared<ArkTSComponentInstance>(ctx);
         }
         return nullptr;
     }
