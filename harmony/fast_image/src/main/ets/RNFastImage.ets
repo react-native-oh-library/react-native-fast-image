@@ -199,7 +199,7 @@ export struct RNFastImage {
         this.dispatchOnError(error.message);
       }
     }).catch((error: RemoteImageLoaderError) => {
-      this.dispatchOnError(error.message)
+        this.dispatchOnError(error.message)
     })
   }
 
@@ -230,7 +230,7 @@ export struct RNFastImage {
         this.dispatchOnError(error.message);
       }
     }).catch((error: RemoteImageLoaderError) => {
-      this.dispatchOnError(error.message)
+        this.dispatchOnError(JSON.stringify(error.message))
     })
   }
 
@@ -260,9 +260,12 @@ export struct RNFastImage {
         }
       })
       .onError((event) => {
-        if (this.descriptor.props.headers.length == 0) {
+        Logger.debug(`[clx] error occur8! message: ${JSON.stringify(event.message)}`);
+        if (this.imageSource !== undefined && this.descriptor.props.headers.length == 0) {
+          Logger.debug(`[clx] error occur9! message: ${JSON.stringify(event.message)}`);
           this.onError();
         }
+        this.imageSource = undefined;
       })
       .id(this.tag.toString())
   }
