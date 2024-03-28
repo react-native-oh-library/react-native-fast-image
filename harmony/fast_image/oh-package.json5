@@ -4,10 +4,10 @@
   "devDependencies": {
   },
   "name": "rnoh-fast-image",
-  "description": "",
+  "description": "c-api-foundation",
   "main": "index.ets",
-  "version": "8.6.3-0.2.4",
+  "version": "8.6.3-0.2.0",
   "dependencies": {
-    "rnoh": "file:../rnoh"
+    "rnoh": "file:../rnoh",
   }
 }

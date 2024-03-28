@@ -29,10 +29,22 @@
 #include "FastImageViewNapiBinder.h"
 #include "FastImageEventEmitRequestHandler.h"
 #include "RNCFastImageViewTurboModule.h"
-// #include "RNOH/ArkTSComponentInstance.h"
+#include "RNOH/ArkTSComponentInstance.h"
 
 using namespace rnoh;
 using namespace facebook;
+
+class FastImageComponentInstanceFactoryDelegate : public ComponentInstanceFactoryDelegate {
+public:
+    using ComponentInstanceFactoryDelegate::ComponentInstanceFactoryDelegate;
+
+    ComponentInstance::Shared create(ComponentInstance::Context ctx) override {
+        if (ctx.componentName == "FastImageView") {
+            return std::make_shared<ArkTSComponentInstance>(ctx);
+        }
+        return nullptr;
+    }
+};
 
 class FastImageTurboModuleFactoryDelegate : public TurboModuleFactoryDelegate {
 public:
@@ -50,6 +62,10 @@ namespace rnoh {
 class FastImagePackage : public Package {
 public:
     FastImagePackage(Package::Context ctx) : Package(ctx) {}
+
+    ComponentInstanceFactoryDelegate::Shared createComponentInstanceFactoryDelegate() override {
+            return std::make_shared<FastImageComponentInstanceFactoryDelegate>(m_ctx);
+    }
 
     std::unique_ptr<TurboModuleFactoryDelegate> createTurboModuleFactoryDelegate() override
     {
