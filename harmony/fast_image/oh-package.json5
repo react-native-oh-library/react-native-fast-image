@@ -2,12 +2,13 @@
   "license": "ISC",
   "types": "",
   "devDependencies": {
+
   },
-  "name": "rnoh-fast-image",
-  "description": "c-api-foundation",
+  "name": "@react-native-oh-tpl/react-native-fast-image",
+  "description": "main cpai architecture",
   "main": "index.ets",
-  "version": "8.6.3-0.2.0",
+  "version": "8.6.3-0.2.5",
   "dependencies": {
-    "rnoh": "file:../rnoh",
+    "rnoh": "file:../rnoh"
   }
 }
