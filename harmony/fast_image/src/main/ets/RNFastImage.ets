@@ -31,12 +31,11 @@ import {
   RNOHContext,
   ViewBaseProps,
   ColorSegments
-} from 'rnoh'
+} from '@rnoh/react-native-openharmony'
 
 import http from '@ohos.net.http';
 import ResponseCode from '@ohos.net.http';
 import image from '@ohos.multimedia.image';
-import { ImageLoaderTurboModule } from 'rnoh/src/main/ets/RNOHCorePackage/turboModules';
 import Logger from './Logger'
 import {FastImageModifier} from './FastImageModifier'
 export const FAST_IMAGE_TYPE = "FastImageView"
@@ -122,9 +121,13 @@ export struct RNFastImage {
     this.onLoadStart();
     this.unregisterDescriptorChangesListener = this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
       (newDescriptor) => {
-        this.descriptor = (newDescriptor as FastImageViewDescriptor)
+        const newFastImageDescriptor = (newDescriptor as FastImageViewDescriptor);
+        const uriChanged = newFastImageDescriptor.props.source !== this.descriptor.props.source;
+        this.descriptor = newFastImageDescriptor;
         this.setDescriptor(this.descriptor)
-        this.onLoadStart();
+        if (uriChanged) {
+          this.onLoadStart();
+        }
         Logger.debug(`RNOH in RNFastImage newDescriptor props tag,${this.tag} ${JSON.stringify(this.descriptor.props)}`);
       }
     )

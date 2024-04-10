@@ -7,8 +7,8 @@
   "name": "@react-native-oh-tpl/react-native-fast-image",
   "description": "main cpai architecture",
   "main": "index.ets",
-  "version": "8.6.3-0.2.5",
+  "version": "8.6.3-0.2.1",
   "dependencies": {
-    "rnoh": "file:../rnoh"
+    "@rnoh/react-native-openharmony": "file:../rnoh"
   }
 }
