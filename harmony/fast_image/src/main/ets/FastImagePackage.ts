@@ -22,20 +22,26 @@
  * SOFTWARE.
  */
 
-import {RNPackage, TurboModulesFactory} from '@rnoh/react-native-openharmony/ts';
-import type {TurboModule, TurboModuleContext} from '@rnoh/react-native-openharmony/ts';
+import { RNPackage, TurboModulesFactory } from '@rnoh/react-native-openharmony/ts';
+import type {
+  TurboModule,
+  TurboModuleContext,
+  DescriptorWrapperFactoryByDescriptorTypeCtx,
+  DescriptorWrapperFactoryByDescriptorType
+} from '@rnoh/react-native-openharmony/ts';
+import { TM, RNC } from "@rnoh/react-native-openharmony/generated/ts"
 import {RNCFastImageViewTurboModule} from './RNCFastImageViewTurboModule';
 import app from '@system.app'
 class FastImageTurboModulesFactory extends TurboModulesFactory {
   createTurboModule(name: string): TurboModule | null {
-    if (name === 'RNCFastImageView') {
+    if (name === TM.RNCFastImageView.NAME) {
       return new RNCFastImageViewTurboModule(this.ctx);
     }
     return null;
   }
 
   hasTurboModule(name: string): boolean {
-    return name === 'RNCFastImageView';
+    return name === TM.RNCFastImageView.NAME;
   }
 }
 
@@ -49,5 +55,11 @@ export class FastImagePackage extends RNPackage {
       globalThis.IsSetImageRawDataCacheSize = true;
     }
     return new FastImageTurboModulesFactory(ctx);
+  }
+
+  createDescriptorWrapperFactoryByDescriptorType(ctx: DescriptorWrapperFactoryByDescriptorTypeCtx): DescriptorWrapperFactoryByDescriptorType {
+    return {
+      [RNC.FastImageView.NAME]: (ctx) => new RNC.FastImageView.DescriptorWrapper(ctx.descriptor)
+    }
   }
 }

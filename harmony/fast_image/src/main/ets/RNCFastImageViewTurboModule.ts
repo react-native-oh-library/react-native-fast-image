@@ -22,27 +22,12 @@
  * SOFTWARE.
  */
 
-import { TurboModule, TurboModuleContext } from '@rnoh/react-native-openharmony/ts';
+import { TurboModule } from '@rnoh/react-native-openharmony/ts';
+import { TM } from "@rnoh/react-native-openharmony/generated/ts"
 import Logger from './Logger'
 
-export type Priority = 'low' | 'normal' | 'high'
-
-type Cache = 'immutable' | 'web' | 'cacheOnly'
-
-type Source = {
-  uri?: string
-  headers?: { [key: string]: string }
-  priority?: Priority
-  cache?: Cache
-}
-
-export class RNCFastImageViewTurboModule extends TurboModule {
-  constructor(protected ctx: TurboModuleContext) {
-    super(ctx);
-    Logger.debug('[RNOH]:RNCFastImageViewTurboModule constructor');
-  }
-
-  preload(sources: Source[]) {
+export class RNCFastImageViewTurboModule extends TurboModule implements TM.RNCFastImageView.Spec {
+  preload(sources: TM.RNCFastImageView.Source[]) {
     Logger.debug('[RNOH]:RNCFastImageViewTurboModule call preload', JSON.stringify(sources));
   }
 

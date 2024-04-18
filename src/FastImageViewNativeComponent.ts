@@ -22,65 +22,50 @@
  * SOFTWARE.
  */
 
-import codegenNativeComponent from "react-native/Libraries/Utilities/codegenNativeComponent";
+import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 import type { 
-    ViewProps,
-    HostComponent, 
+    ViewProps, 
     ColorValue,
-} from "react-native";
-import type { 
-    WithDefault, 
-    DirectEventHandler, 
-    Int32} from "react-native/Libraries/Types/CodegenTypes";
+} from 'react-native';
+import type {
+  Float,
+  WithDefault,
+  BubblingEventHandler,
+  Int32,
+} from 'react-native/Libraries/Types/CodegenTypes';
 
-export type ResizeMode = 'contain' | 'cover' | 'stretch' | 'center';
+type Headers = ReadonlyArray<Readonly<{name: string, value: string}>>;
+type Priority = WithDefault< 'low' | 'normal' | 'high', 'normal'>
+type CacheControl = WithDefault< 'immutable' | 'web' | 'cacheOnly', 'web'>
 
-export type OnProgressEventData = Readonly<{
-    loaded: Int32,
-    total: Int32
-}>;
+type FastImageSource = Readonly<{
+    uri?: string,
+    headers?: Headers,
+    priority?: Priority,
+    cache?: CacheControl,
+}>
 
-export type OnLoadEventData = Readonly<{
-    width: Int32,
-    height: Int32
-}>;
+type OnLoadEvent = Readonly<{
+        width: Float,
+        height: Float,
+      }>
 
-export type OnLoadStartEventData = Readonly<{}>;
-export type OnLoadEndEventData = Readonly<{}>;
-export type OnErrorEventData = Readonly<{}>;
-type Priority = 'low' | 'normal' | 'high'
-
-type Cache = 'immutable' | 'web' | 'cacheOnly';
-
-type Source = {
-  uri?: string;
-  headers?: { [key: string]: string };
-  priority?: WithDefault<Priority, 'normal'>;
-  cache?: WithDefault<Cache, 'web'>;
-}
-
-type DefaultSource = {
-    uri?: string;
-}
+type OnProgressEvent = Readonly<{
+        loaded: Int32,
+        total: Int32,
+      }>
 
 export interface FastImageProps extends ViewProps {
-    source?: Source
-    resizeMode?: WithDefault<ResizeMode, 'cover'>
-    fallback?: boolean
-    onLoadStart?: DirectEventHandler<OnLoadStartEventData>;
-
-    onProgress?: DirectEventHandler<OnProgressEventData>;
-
-    onLoad?: DirectEventHandler<OnLoadEventData>;
-
-    onError?: DirectEventHandler<OnErrorEventData>;
-
-    onLoadEnd?: DirectEventHandler<OnLoadEndEventData>;
-
-    tintColor?: ColorValue
-    defaultSource?: DefaultSource
+  onError?: BubblingEventHandler<Readonly<{}>>,
+  onLoad?: BubblingEventHandler<OnLoadEvent>,
+  onLoadEnd?: BubblingEventHandler<Readonly<{}>>,
+  onLoadStart?: BubblingEventHandler<Readonly<{}>>,
+  onProgress?: BubblingEventHandler<OnProgressEvent>,
+  source?: FastImageSource,
+  defaultSource?: string | null,
+  fallback?: boolean,
+  resizeMode?:  WithDefault<'contain' | 'cover' | 'stretch' | 'center', 'cover'>,
+  tintColor?: ColorValue,
 }
 
-export default codegenNativeComponent<FastImageProps>(
-    'FastImageView'
-) as HostComponent<FastImageProps>;
+export default codegenNativeComponent<FastImageProps>('FastImageView');
