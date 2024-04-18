@@ -30,16 +30,14 @@ import {
   RNViewManager,
   RNOHContext,
   ViewBaseProps,
-  ColorSegments,
-} from 'rnoh'
+  ColorSegments
+} from '@rnoh/react-native-openharmony'
 
 import http from '@ohos.net.http';
 import ResponseCode from '@ohos.net.http';
 import image from '@ohos.multimedia.image';
-import { ImageLoaderTurboModule } from 'rnoh/src/main/ets/RNOHCorePackage/turboModules';
 import Logger from './Logger'
 import {FastImageModifier} from './FastImageModifier'
-import { RemoteImageLoaderError } from 'rnoh/src/main/ets/RemoteImageLoader/RemoteImageLoaderError';
 export const FAST_IMAGE_TYPE = "FastImageView"
 
 export interface FastImageProps extends ViewBaseProps {
@@ -59,14 +57,7 @@ interface FastImageRawProps extends ViewRawProps {
 export type FastImageViewDescriptor = Descriptor<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>
 
 export class FastImageDescriptorWrapper extends ViewDescriptorWrapperBase<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>{
-}
-
-class ImageSourceHolder {
-  public source: string | Resource | PixelMap
-
-  constructor(source: string | Resource | PixelMap) {
-    this.source = source
-  }
+  transformStringify: string = "0";
 }
 
 @Component
@@ -81,8 +72,6 @@ export struct RNFastImage {
   private unregisterCommandCallback?: () => void = undefined
 
   @State pixelMap: PixelMap | undefined = undefined
-  @State imageSource: ImageSourceHolder | undefined = undefined
-  @State defaultImageSource: ImageSourceHolder | undefined = undefined
 
   requestWithHeaders() {
     http.createHttp().request(this.descriptor.props.source, { header:JSON.parse(this.descriptor.props.headers) },
@@ -129,16 +118,16 @@ export struct RNFastImage {
   aboutToAppear() {
     this.initComponent()
     this.descriptor = this.ctx.descriptorRegistry.getDescriptor<FastImageViewDescriptor>(this.tag)
-    this.updateDefaultImageSource();
-    this.updateImageSource();
-    Logger.info(`this.defaultImageSource${this.defaultImageSource?.source.toString()} }`);
-
+    this.onLoadStart();
     this.unregisterDescriptorChangesListener = this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
       (newDescriptor) => {
-        this.descriptor = (newDescriptor as FastImageViewDescriptor)
+        const newFastImageDescriptor = (newDescriptor as FastImageViewDescriptor);
+        const uriChanged = newFastImageDescriptor.props.source !== this.descriptor.props.source;
+        this.descriptor = newFastImageDescriptor;
         this.setDescriptor(this.descriptor)
-        this.updateDefaultImageSource();
-        this.updateImageSource();
+        if (uriChanged) {
+          this.onLoadStart();
+        }
         Logger.debug(`RNOH in RNFastImage newDescriptor props tag,${this.tag} ${JSON.stringify(this.descriptor.props)}`);
       }
     )
@@ -146,7 +135,6 @@ export struct RNFastImage {
     if (this.descriptor.props.headers.length > 0) {
       this.requestWithHeaders()
     }
-    this.onLoadStart();
   }
 
   aboutToDisappear() {
@@ -171,83 +159,16 @@ export struct RNFastImage {
     )
   }
 
-  updateImageSource() {
-    const uri = this.descriptor.props.source;
-    if (uri.startsWith("asset://")) {
-      this.imageSource = new ImageSourceHolder($rawfile(uri.replace("asset://", "assets/")));
-      return;
-    }
-    if (uri.startsWith("data:")) {
-      this.imageSource = new ImageSourceHolder(uri);
-      return;
-    }
-    const imageLoader = this.ctx.rnInstance.getTurboModule<ImageLoaderTurboModule>("ImageLoader");
-    this.imageSource = undefined;
-    imageLoader.getRemoteImageSource(uri).then(async (remoteImage) => {
-      try {
-        const imageSource = remoteImage.getImageSource();
-        const frameCounter = await imageSource.getFrameCount();
-        if (frameCounter === 1) {
-          // use the downloaded or cached image source
-          this.imageSource = new ImageSourceHolder(await imageLoader.getPixelMap(uri));
-        } else {
-          // an animated GIF
-          this.imageSource = new ImageSourceHolder(remoteImage.getLocation())
-        }
-      } catch (error) {
-        this.dispatchOnError(error.message);
-      }
-    }).catch((error: RemoteImageLoaderError) => {
-      this.dispatchOnError(error.message)
-    })
-  }
-
-  updateDefaultImageSource() {
-    const uri = this.descriptor.props.defaultSource;
-    if (uri.startsWith("asset://")) {
-      this.defaultImageSource = new ImageSourceHolder($rawfile(uri.replace("asset://", "assets/")));
-      return;
-    }
-    if (uri.startsWith("data:")) {
-      this.defaultImageSource = new ImageSourceHolder(uri);
-      return;
-    }
-    const imageLoader = this.ctx.rnInstance.getTurboModule<ImageLoaderTurboModule>("ImageLoader");
-    this.defaultImageSource = undefined;
-    imageLoader.getRemoteImageSource(uri).then(async (remoteImage) => {
-      try {
-        const imageSource = remoteImage.getImageSource();
-        const frameCounter = await imageSource.getFrameCount();
-        if (frameCounter === 1) {
-          // use the downloaded or cached image source
-          this.defaultImageSource = new ImageSourceHolder(await imageLoader.getPixelMap(uri));
-        } else {
-          // an animated GIF
-          this.defaultImageSource = new ImageSourceHolder(remoteImage.getLocation())
-        }
-      } catch (error) {
-        this.dispatchOnError(error.message);
-      }
-    }).catch((error: RemoteImageLoaderError) => {
-      this.dispatchOnError(error.message)
-    })
-  }
-
-  dispatchOnError(message?: string) {
-    const errorMessage = message ? message : "Failed to load the image";
-    this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, "error", errorMessage)
-  }
-
   setDescriptor(descriptor:ViewBaseDescriptor) {
     this.descriptorWrapper = new FastImageDescriptorWrapper(descriptor)
   }
 
   build() {
-    Image(this.descriptor.props.headers.length > 0 ? this.pixelMap : this.imageSource?.source)
+    Image(this.descriptor.props.headers.length > 0 ? this.pixelMap : this.getSource(this.descriptor.props.source))
       .attributeModifier(FastImageModifier.getInstance().setDescriptor(this.descriptor, this.descriptorWrapper as FastImageDescriptorWrapper))
       .interpolation(ImageInterpolation.High)
       .draggable(false)
-      .alt(this.defaultImageSource?.source as string | Resource | undefined)
+      .alt(this.getSource(this.descriptor.props.defaultSource))
       .onComplete((event) => {
         if (event) {
           if (event.loadingStatus) {
@@ -259,11 +180,23 @@ export struct RNFastImage {
         }
       })
       .onError((event) => {
+        Logger.error(`RNOH in RNFastImageonError 0`);
         if (this.descriptor.props.headers.length == 0) {
+          Logger.error(`RNOH in RNFastImage onError 1`);
           this.onError();
         }
       })
       .id(this.tag.toString())
+  }
+
+  getSource(source: string) {
+    if (source.startsWith("asset://")) {
+      return $rawfile(source.replace("asset://", "assets/"));
+    }
+    if (source.startsWith("file://assets/src/assets/")) {
+      return $rawfile(source.replace("file://assets/src/assets/", "assets/"));
+    }
+    return source
   }
 
   onLoadStart() {

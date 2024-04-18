@@ -29,6 +29,7 @@
 #include "FastImageViewNapiBinder.h"
 #include "FastImageEventEmitRequestHandler.h"
 #include "RNCFastImageViewTurboModule.h"
+// #include "RNOH/ArkTSComponentInstance.h"
 
 using namespace rnoh;
 using namespace facebook;
@@ -49,7 +50,7 @@ namespace rnoh {
 class FastImagePackage : public Package {
 public:
     FastImagePackage(Package::Context ctx) : Package(ctx) {}
-    
+
     std::unique_ptr<TurboModuleFactoryDelegate> createTurboModuleFactoryDelegate() override
     {
         return std::make_unique<FastImageTurboModuleFactoryDelegate>();

@@ -1,7 +1,7 @@
 import {
   TransformMatrix,
   getTintColorMatrix
-} from 'rnoh';
+} from '@rnoh/react-native-openharmony';
 import {FastImageViewDescriptor, FastImageDescriptorWrapper } from './RNFastImage';
 import matrix4 from '@ohos.matrix4';
 
