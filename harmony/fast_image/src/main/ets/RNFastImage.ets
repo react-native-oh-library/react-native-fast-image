@@ -81,14 +81,9 @@ export struct RNFastImage {
           if (ResponseCode.ResponseCode.OK === code) {
             let res: ArrayBuffer = data.result as ArrayBuffer
             let imageSource = image.createImageSource(res);
-            imageSource.getImageInfo((err, value) => {
-              if (err) {
-                Logger.error("RNOH in getImageInfo err:")
-                this.onError();
-                return;
-              }
-              let hValue = Math.round(value.size.height );
-              let wValue = Math.round(value.size.width);
+            if(this.descriptorWrapper){
+              let hValue = Math.round(this.descriptorWrapper.height );
+              let wValue = Math.round(this.descriptorWrapper.width);
 
               let options: image.InitializationOptions = {
                 alphaType: 0,
@@ -105,7 +100,7 @@ export struct RNFastImage {
                   this.pixelMap = pixelMap
                 }
               })
-            })
+            }
           }
         } else {
           Logger.error(`RNOH in RNFastImage http reqeust failed with. Code: ${error.code}, message: ${error.message}`);
