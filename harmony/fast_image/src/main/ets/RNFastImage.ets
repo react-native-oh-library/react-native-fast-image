@@ -31,6 +31,11 @@ import { RemoteImageLoaderError } from '@rnoh/react-native-openharmony/src/main/
 import { RNC } from "@rnoh/react-native-openharmony/generated"
 import Logger from './Logger'
 
+/**
+ * @deprecated Use RNFastImage.NAME instead
+ */
+export const FAST_IMAGE_TYPE = "FastImageView"
+
 class ImageSourceHolder {
   public source: string | Resource | PixelMap
 
@@ -94,25 +99,31 @@ export struct RNFastImage {
             if (ResponseCode.ResponseCode.OK === code) {
               let res: ArrayBuffer = data.result as ArrayBuffer
               let imageSource = image.createImageSource(res);
-              let options: image.InitializationOptions = {
-                alphaType: 0,
-                editable: false,
-                pixelFormat: 3,
-                scaleMode: 1,
-                size: {
-                  width: this.descriptorWrapper.width,
-                  height: this.descriptorWrapper.height
+
+              if (this.descriptorWrapper) {
+                let wValue = Math.round(this.descriptorWrapper.width);
+                let hValue = Math.round(this.descriptorWrapper.height);
+                let options: image.InitializationOptions = {
+                  alphaType: 0,
+                  editable: false,
+                  pixelFormat: 3,
+                  scaleMode: 1,
+                  size: {
+                    width: wValue,
+                    height: hValue
+                  }
                 }
+                imageSource.createPixelMap(options, (err, pixelMap) => {
+                  if (err) {
+                    Logger.error(`RNOH in createPixelMap err: `);
+                    this.onError();
+                  } else {
+                    this.imageSource = new ImageSourceHolder(pixelMap)
+                  }
+                })
               }
-              imageSource.createPixelMap(options, (err, pixelMap) => {
-                if (err) {
-                  Logger.error(`RNOH in createPixelMap err: `);
-                  this.onError();
-                } else {
-                  this.imageSource = new ImageSourceHolder(pixelMap)
-                }
-              })
             }
+
           } else {
             Logger.error(`RNOH in RNFastImage http reqeust failed with. Code: ${error.code}, message: ${error.message}`);
             this.onError();
