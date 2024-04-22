@@ -22,206 +22,249 @@
  * SOFTWARE.
  */
 
-import {
-  Descriptor,
-  ViewDescriptorWrapperBase,
-  ViewBaseDescriptor,
-  ViewRawProps,
-  RNViewManager,
-  RNOHContext,
-  ViewBaseProps,
-  ColorSegments
-} from '@rnoh/react-native-openharmony'
-
 import http from '@ohos.net.http';
 import ResponseCode from '@ohos.net.http';
 import image from '@ohos.multimedia.image';
+import { RNComponentContext, RNViewBase } from '@rnoh/react-native-openharmony'
+import { ImageLoaderTurboModule } from '@rnoh/react-native-openharmony/src/main/ets/RNOHCorePackage/turboModules';
+import { RemoteImageLoaderError } from '@rnoh/react-native-openharmony/src/main/ets/RemoteImageLoader';
+import { RNC } from "@rnoh/react-native-openharmony/generated"
 import Logger from './Logger'
-import {FastImageModifier} from './FastImageModifier'
+
+/**
+ * @deprecated Use RNFastImage.NAME instead
+ */
 export const FAST_IMAGE_TYPE = "FastImageView"
 
-export interface FastImageProps extends ViewBaseProps {
-  source: string
-  resizeMode: number
-  headers: string
-  priority: string
-  cache: string
-  tintColor: ColorSegments
-  defaultSource: string
-}
+class ImageSourceHolder {
+  public source: string | Resource | PixelMap
 
-interface FastImageState {}
-interface FastImageRawProps extends ViewRawProps {
-  alt: string
-}
-export type FastImageViewDescriptor = Descriptor<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>
-
-export class FastImageDescriptorWrapper extends ViewDescriptorWrapperBase<"FastImageView", FastImageProps, FastImageState, FastImageRawProps>{
-  transformStringify: string = "0";
+  constructor(source: string | Resource | PixelMap) {
+    this.source = source
+  }
 }
 
 @Component
 export struct RNFastImage {
-  ctx!: RNOHContext
+  public static readonly NAME = RNC.FastImageView.NAME
+  ctx!: RNComponentContext
   tag: number = 0
-  @State descriptor: FastImageViewDescriptor = {} as FastImageViewDescriptor
-  private unregisterDescriptorChangesListener?: () => void = undefined
-  public componentManager!:RNViewManager;
-  @State descriptorWrapper :FastImageDescriptorWrapper | undefined = undefined
-  private unregisterComponentManager?: () => void = undefined
-  private unregisterCommandCallback?: () => void = undefined
-
-  @State pixelMap: PixelMap | undefined = undefined
-
-  requestWithHeaders() {
-    http.createHttp().request(this.descriptor.props.source, { header:JSON.parse(this.descriptor.props.headers) },
-      (error, data) => {
-        if (!error) {
-          let code = data.responseCode;
-          if (ResponseCode.ResponseCode.OK === code) {
-            let res: ArrayBuffer = data.result as ArrayBuffer
-            let imageSource = image.createImageSource(res);
-            if(this.descriptorWrapper){
-              let hValue = Math.round(this.descriptorWrapper.height );
-              let wValue = Math.round(this.descriptorWrapper.width);
-
-              let options: image.InitializationOptions = {
-                alphaType: 0,
-                editable: false,
-                pixelFormat: 3,
-                scaleMode: 1,
-                size: {width: wValue, height: hValue}
-              }
-              imageSource.createPixelMap(options, (err, pixelMap) => {
-                if (err) {
-                  Logger.error(`RNOH in createPixelMap err: `);
-                  this.onError();
-                } else {
-                  this.pixelMap = pixelMap
-                }
-              })
-            }
-          }
-        } else {
-          Logger.error(`RNOH in RNFastImage http reqeust failed with. Code: ${error.code}, message: ${error.message}`);
-          this.onError();
-        }
-      }
-    )
-  }
+  // workaround: `@State` fields cannot be unions of primitive (`string`) and object (`Resource`, `PixelMap`) types
+  @State imageSource: ImageSourceHolder | undefined = undefined
+  @State private descriptorWrapper: RNC.FastImageView.DescriptorWrapper = {} as RNC.FastImageView.DescriptorWrapper
+  private eventEmitter: RNC.FastImageView.EventEmitter | undefined = undefined
+  private cleanUpCallbacks: (() => void)[] = []
+  defaultColorFilter: number[] = [
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+  ]
 
   aboutToAppear() {
-    this.initComponent()
-    this.descriptor = this.ctx.descriptorRegistry.getDescriptor<FastImageViewDescriptor>(this.tag)
-    this.onLoadStart();
-    this.unregisterDescriptorChangesListener = this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
-      (newDescriptor) => {
-        const newFastImageDescriptor = (newDescriptor as FastImageViewDescriptor);
-        const uriChanged = newFastImageDescriptor.props.source !== this.descriptor.props.source;
-        this.descriptor = newFastImageDescriptor;
-        this.setDescriptor(this.descriptor)
-        if (uriChanged) {
-          this.onLoadStart();
-        }
-        Logger.debug(`RNOH in RNFastImage newDescriptor props tag,${this.tag} ${JSON.stringify(this.descriptor.props)}`);
+    this.eventEmitter = new RNC.FastImageView.EventEmitter(this.ctx.rnInstance, this.tag)
+    this.onDescriptorWrapperChange(this.ctx.descriptorRegistry.findDescriptorWrapperByTag<RNC.FastImageView.DescriptorWrapper>(this.tag)!)
+    Logger.info(`RNOH in RNFastImage descriptor: ${JSON.stringify(this.descriptorWrapper.props.source?.uri)}`);
+    this.cleanUpCallbacks.push(this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
+      (_descriptor, newDescriptorWrapper) => {
+        this.onDescriptorWrapperChange(newDescriptorWrapper! as RNC.FastImageView.DescriptorWrapper)
       }
-    )
-    Logger.debug(`RNOH in RNFastImage props tag,${this.tag} ${JSON.stringify(this.descriptor.props)}`);
-    if (this.descriptor.props.headers.length > 0) {
-      this.requestWithHeaders()
+    ))
+  }
+
+  private onDescriptorWrapperChange(descriptorWrapper: RNC.FastImageView.DescriptorWrapper) {
+    let uriChanged = false;
+    if (this.descriptorWrapper.props === undefined) {
+      uriChanged = true;
+    } else {
+      uriChanged = descriptorWrapper.props.source?.uri !== this.descriptorWrapper.props.source?.uri;
+    }
+    this.descriptorWrapper = descriptorWrapper
+    if (uriChanged) {
+      this.onLoadStart();
+      this.updateImageSource();
     }
   }
 
   aboutToDisappear() {
-    this.unregisterDescriptorChangesListener?.()
-    this.unregisterComponentManager?.()
-    this.unregisterCommandCallback?.()
+    this.cleanUpCallbacks.forEach(cb => cb())
   }
 
-  initComponent() {
-    let descriptor = this.ctx.descriptorRegistry.getDescriptor<ViewBaseDescriptor>(this.tag)
-    if (!this.componentManager) {
-      this.componentManager = new RNViewManager(this.tag, this.ctx)
+  requestWithHeaders() {
+    http.createHttp()
+      .request(this.descriptorWrapper.props.source?.uri, { header: this.descriptorWrapper.props.source?.headers },
+        (error, data) => {
+          if (!error) {
+            let code = data.responseCode;
+            if (ResponseCode.ResponseCode.OK === code) {
+              let res: ArrayBuffer = data.result as ArrayBuffer
+              let imageSource = image.createImageSource(res);
+
+              if (this.descriptorWrapper) {
+                let wValue = Math.round(this.descriptorWrapper.width);
+                let hValue = Math.round(this.descriptorWrapper.height);
+                let options: image.InitializationOptions = {
+                  alphaType: 0,
+                  editable: false,
+                  pixelFormat: 3,
+                  scaleMode: 1,
+                  size: {
+                    width: wValue,
+                    height: hValue
+                  }
+                }
+                imageSource.createPixelMap(options, (err, pixelMap) => {
+                  if (err) {
+                    Logger.error(`RNOH in createPixelMap err: `);
+                    this.onError();
+                  } else {
+                    this.imageSource = new ImageSourceHolder(pixelMap)
+                  }
+                })
+              }
+            }
+
+          } else {
+            Logger.error(`RNOH in RNFastImage http reqeust failed with. Code: ${error.code}, message: ${error.message}`);
+            this.onError();
+          }
+        }
+      )
+  }
+
+  async updateImageSource() {
+    const uri = this.descriptorWrapper.props.source?.uri ?? '';
+    if (uri.startsWith("asset://")) {
+      this.imageSource = new ImageSourceHolder($rawfile(uri.replace("asset://", this.ctx.rnInstance.getAssetsDest())));
+      return;
     }
-    this.unregisterComponentManager = this.ctx.componentManagerRegistry.registerComponentManager(this.tag, this.componentManager)
-    this.setDescriptor(descriptor)
-    const parentTag = descriptor.parentTag
-    this.componentManager.setParentTag(parentTag)
-    this.unregisterDescriptorChangesListener = this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
-      (newDescriptor) => {
-        this.setDescriptor(newDescriptor)
+    if (uri.startsWith("data:")) {
+      this.imageSource = new ImageSourceHolder(uri);
+      return;
+    }
+    if (this.descriptorWrapper.props.source?.headers && this.descriptorWrapper.props.source?.headers.length > 0) {
+      this.requestWithHeaders()
+      return;
+    }
+    const skipImageLoader = true && !this.ctx.rnInstance.isFeatureFlagEnabled("IMAGE_LOADER");
+    const imageLoader = this.ctx.rnInstance.getTurboModule<ImageLoaderTurboModule>("ImageLoader");
+    const queryCacheResult = await imageLoader.queryCache([uri]) as Record<string, string>;
+    const isNotCached = !queryCacheResult[uri];
+    if (skipImageLoader && isNotCached) {
+      this.imageSource = new ImageSourceHolder(uri);
+      return;
+    }
+
+    this.imageSource = undefined;
+    imageLoader.getRemoteImageSource(uri).then(async (remoteImage) => {
+      try {
+        const imageSource = remoteImage.getImageSource();
+        const frameCounter = await imageSource.getFrameCount();
+        if (frameCounter === 1) {
+          // use the downloaded or cached image source
+          this.imageSource = new ImageSourceHolder(await imageLoader.getPixelMap(uri));
+        } else {
+          // an animated GIF
+          this.imageSource = new ImageSourceHolder(remoteImage.getLocation())
+        }
+      } catch (error) {
+        this.onError();
+        this.onLoadEnd()
       }
-    )
+    }).catch((error: RemoteImageLoaderError) => {
+      this.onError()
+      this.onLoadEnd()
+    })
   }
 
-  setDescriptor(descriptor:ViewBaseDescriptor) {
-    this.descriptorWrapper = new FastImageDescriptorWrapper(descriptor)
+  getResizeMode(resizeMode: string) {
+    switch (resizeMode) {
+      case 'contain':
+        return ImageFit.Contain;
+      case 'cover':
+        return ImageFit.Cover;
+      case 'stretch':
+        return ImageFit.Fill;
+      case 'center':
+        return ImageFit.None;
+      default:
+        return ImageFit.Cover;
+    }
   }
 
   build() {
-    Image(this.descriptor.props.headers.length > 0 ? this.pixelMap : this.getSource(this.descriptor.props.source))
-      .attributeModifier(FastImageModifier.getInstance().setDescriptor(this.descriptor, this.descriptorWrapper as FastImageDescriptorWrapper))
-      .interpolation(ImageInterpolation.High)
-      .draggable(false)
-      .alt(this.getSource(this.descriptor.props.defaultSource))
-      .onComplete((event) => {
-        if (event) {
-          if (event.loadingStatus) {
-            this.onLoadEnd();
-            this.onProgress(1, 1);
-          } else {
-            this.onLoad(event.width, event.height);
-          }
-        }
-      })
-      .onError((event) => {
-        Logger.error(`RNOH in RNFastImageonError 0`);
-        if (this.descriptor.props.headers.length == 0) {
-          Logger.error(`RNOH in RNFastImage onError 1`);
-          this.onError();
-        }
-      })
-      .id(this.tag.toString())
+    RNViewBase({
+      ctx: this.ctx,
+      tag: this.tag,
+      controlsFocus: false
+    }) {
+      // NOTE: this ensures we switch the image source, even if the new source is bad.
+      // ArkUI keeps displaying the last "good" image when the passed source parameter changes
+      if (this.imageSource?.source) {
+        Image(this.imageSource.source)
+          .interpolation(ImageInterpolation.High)
+          .draggable(false)
+          .alt(this.getDefaultSource())
+          .width(this.descriptorWrapper?.width)
+          .height(this.descriptorWrapper?.height)
+          .position({
+            x: 0,
+            y: 0,
+          })
+          .objectFit(this.getResizeMode(this.descriptorWrapper.props.resizeMode))
+          .colorFilter(this.descriptorWrapper.props.tintColor)
+          .focusable(this.descriptorWrapper?.focusable ?? false)
+          .hitTestBehavior(HitTestMode.None)
+          .onComplete((event) => {
+            if (event) {
+              if (event.loadingStatus) {
+                this.onLoadEnd();
+                this.onProgress(1, 1);
+              } else {
+                this.onLoad(event.width, event.height);
+              }
+            }
+          })
+          .onError((event) => {
+            Logger.error(`RNOH in RNFastImageonError 0`);
+            this.onError();
+          })
+          .id(this.descriptorWrapper.tag.toString())
+      }
+    }
   }
 
-  getSource(source: string) {
-    if (source.startsWith("asset://")) {
-      return $rawfile(source.replace("asset://", "assets/"));
+  getDefaultSource(): string | Resource | undefined {
+    const defaultSource = this.descriptorWrapper.props.defaultSource;
+    if (defaultSource === undefined) {
+      return undefined;
     }
-    if (source.startsWith("file://assets/src/assets/")) {
-      return $rawfile(source.replace("file://assets/src/assets/", "assets/"));
+    if (defaultSource.startsWith("asset://")) {
+      return $rawfile(defaultSource.replace("asset://", this.ctx.rnInstance.getAssetsDest()));
     }
-    return source
+    return defaultSource;
   }
 
   onLoadStart() {
-    this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, FAST_IMAGE_TYPE, { type: "onLoadStart" });
+    this.eventEmitter!.emit("loadStart", {})
   }
 
   onProgress(loaded: number, total: number) {
-    this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, FAST_IMAGE_TYPE, {
-      type: "onProgress",
-      loaded: loaded,
-      total: total,
-    })
+    this.eventEmitter!.emit("progress", { loaded: loaded, total: total })
   }
 
   onLoad(width: number, height: number) {
     Logger.debug(`RNOH in RNFastImage onLoad,${this.tag}`);
-    this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, FAST_IMAGE_TYPE, {
-      type: "onLoad",
-      width: width,
-      height: height,
-    })
+    this.eventEmitter!.emit("load", { width: width, height: height })
   }
 
   onError() {
     Logger.error(`RNOH in RNFastImage onError,${this.tag}`);
-    this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, FAST_IMAGE_TYPE, { type: "onError" })
+    this.eventEmitter!.emit("error", {})
     this.onProgress(0, 1);
   }
 
   onLoadEnd() {
-    this.ctx.rnInstance.emitComponentEvent(this.descriptor.tag, FAST_IMAGE_TYPE, { type: "onLoadEnd" })
+    this.eventEmitter!.emit("loadEnd", {})
   }
 }

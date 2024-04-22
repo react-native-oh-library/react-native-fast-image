@@ -1,6 +1,6 @@
 {
     "name": "@react-native-oh-tpl/react-native-fast-image",
-    "version": "8.6.3-0.2.2",
+    "version": "8.6.3-0.3.0",
     "description": "🚩 FastImage, performant React Native image component.",
     "keywords": [
         "cache",
@@ -95,7 +95,12 @@
         "registry": "https://registry.npmjs.org/"
     },
     "harmony": {
-        "alias": "react-native-fast-image"
+        "alias": "react-native-fast-image",
+        "codegenConfig": {
+            "specPaths": [
+              "./src"
+            ]
+          }
     },
     "react-native": "src/index",
     "react-native-builder-bob": {
