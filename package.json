@@ -95,12 +95,7 @@
         "registry": "https://registry.npmjs.org/"
     },
     "harmony": {
-        "alias": "react-native-fast-image",
-        "codegenConfig": {
-            "specPaths": [
-              "./src"
-            ]
-          }
+        "alias": "react-native-fast-image"
     },
     "react-native": "src/index",
     "react-native-builder-bob": {
