@@ -23,11 +23,12 @@
  */
 
 import { TurboModule } from '@rnoh/react-native-openharmony/ts';
-import { TM } from "@rnoh/react-native-openharmony/generated/ts"
 import Logger from './Logger'
+import { RNCFastImageView } from "./TMSpecs"
 
-export class RNCFastImageViewTurboModule extends TurboModule implements TM.RNCFastImageView.Spec {
-  preload(sources: TM.RNCFastImageView.Source[]) {
+
+export class RNCFastImageViewTurboModule extends TurboModule implements RNCFastImageView.Spec {
+  preload(sources: RNCFastImageView.Source[]) {
     Logger.debug('[RNOH]:RNCFastImageViewTurboModule call preload', JSON.stringify(sources));
   }
 

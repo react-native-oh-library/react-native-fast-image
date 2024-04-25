@@ -55,17 +55,16 @@ type OnProgressEvent = Readonly<{
         total: Int32,
       }>
 
-export interface FastImageProps extends ViewProps {
-  onError?: BubblingEventHandler<Readonly<{}>>,
-  onLoad?: BubblingEventHandler<OnLoadEvent>,
-  onLoadEnd?: BubblingEventHandler<Readonly<{}>>,
-  onLoadStart?: BubblingEventHandler<Readonly<{}>>,
-  onProgress?: BubblingEventHandler<OnProgressEvent>,
+interface NativeProps extends ViewProps {
+  onFastImageError?: BubblingEventHandler<Readonly<{}>>,
+  onFastImageLoad?: BubblingEventHandler<OnLoadEvent>,
+  onFastImageLoadEnd?: BubblingEventHandler<Readonly<{}>>,
+  onFastImageLoadStart?: BubblingEventHandler<Readonly<{}>>,
+  onFastImageProgress?: BubblingEventHandler<OnProgressEvent>,
   source?: FastImageSource,
   defaultSource?: string | null,
-  fallback?: boolean,
   resizeMode?:  WithDefault<'contain' | 'cover' | 'stretch' | 'center', 'cover'>,
   tintColor?: ColorValue,
 }
 
-export default codegenNativeComponent<FastImageProps>('FastImageView');
+export default codegenNativeComponent<NativeProps>('FastImageView');

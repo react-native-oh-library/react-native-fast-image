@@ -28,7 +28,7 @@ import image from '@ohos.multimedia.image';
 import { RNComponentContext, RNViewBase } from '@rnoh/react-native-openharmony'
 import { ImageLoaderTurboModule } from '@rnoh/react-native-openharmony/src/main/ets/RNOHCorePackage/turboModules';
 import { RemoteImageLoaderError } from '@rnoh/react-native-openharmony/src/main/ets/RemoteImageLoader';
-import { RNC } from "@rnoh/react-native-openharmony/generated"
+import { FastImageView } from "./RNCSpecs"
 import Logger from './Logger'
 
 /**
@@ -46,13 +46,13 @@ class ImageSourceHolder {
 
 @Component
 export struct RNFastImage {
-  public static readonly NAME = RNC.FastImageView.NAME
+  public static readonly NAME = FastImageView.NAME
   ctx!: RNComponentContext
   tag: number = 0
   // workaround: `@State` fields cannot be unions of primitive (`string`) and object (`Resource`, `PixelMap`) types
   @State imageSource: ImageSourceHolder | undefined = undefined
-  @State private descriptorWrapper: RNC.FastImageView.DescriptorWrapper = {} as RNC.FastImageView.DescriptorWrapper
-  private eventEmitter: RNC.FastImageView.EventEmitter | undefined = undefined
+  @State private descriptorWrapper: FastImageView.DescriptorWrapper = {} as FastImageView.DescriptorWrapper
+  private eventEmitter: FastImageView.EventEmitter | undefined = undefined
   private cleanUpCallbacks: (() => void)[] = []
   defaultColorFilter: number[] = [
     1, 0, 0, 0, 0,
@@ -62,17 +62,17 @@ export struct RNFastImage {
   ]
 
   aboutToAppear() {
-    this.eventEmitter = new RNC.FastImageView.EventEmitter(this.ctx.rnInstance, this.tag)
-    this.onDescriptorWrapperChange(this.ctx.descriptorRegistry.findDescriptorWrapperByTag<RNC.FastImageView.DescriptorWrapper>(this.tag)!)
+    this.eventEmitter = new FastImageView.EventEmitter(this.ctx.rnInstance, this.tag)
+    this.onDescriptorWrapperChange(this.ctx.descriptorRegistry.findDescriptorWrapperByTag<FastImageView.DescriptorWrapper>(this.tag)!)
     Logger.info(`RNOH in RNFastImage descriptor: ${JSON.stringify(this.descriptorWrapper.props.source?.uri)}`);
     this.cleanUpCallbacks.push(this.ctx.descriptorRegistry.subscribeToDescriptorChanges(this.tag,
       (_descriptor, newDescriptorWrapper) => {
-        this.onDescriptorWrapperChange(newDescriptorWrapper! as RNC.FastImageView.DescriptorWrapper)
+        this.onDescriptorWrapperChange(newDescriptorWrapper! as FastImageView.DescriptorWrapper)
       }
     ))
   }
 
-  private onDescriptorWrapperChange(descriptorWrapper: RNC.FastImageView.DescriptorWrapper) {
+  private onDescriptorWrapperChange(descriptorWrapper: FastImageView.DescriptorWrapper) {
     let uriChanged = false;
     if (this.descriptorWrapper.props === undefined) {
       uriChanged = true;
@@ -246,25 +246,25 @@ export struct RNFastImage {
   }
 
   onLoadStart() {
-    this.eventEmitter!.emit("loadStart", {})
+    this.eventEmitter!.emit("fastImageLoadStart", {})
   }
 
   onProgress(loaded: number, total: number) {
-    this.eventEmitter!.emit("progress", { loaded: loaded, total: total })
+    this.eventEmitter!.emit("fastImageProgress", { loaded: loaded, total: total })
   }
 
   onLoad(width: number, height: number) {
     Logger.debug(`RNOH in RNFastImage onLoad,${this.tag}`);
-    this.eventEmitter!.emit("load", { width: width, height: height })
+    this.eventEmitter!.emit("fastImageLoad", { width: width, height: height })
   }
 
   onError() {
     Logger.error(`RNOH in RNFastImage onError,${this.tag}`);
-    this.eventEmitter!.emit("error", {})
+    this.eventEmitter!.emit("fastImageError", {})
     this.onProgress(0, 1);
   }
 
   onLoadEnd() {
-    this.eventEmitter!.emit("loadEnd", {})
+    this.eventEmitter!.emit("fastImageLoadEnd", {})
   }
 }
