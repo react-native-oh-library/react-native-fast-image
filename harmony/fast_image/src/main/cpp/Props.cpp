@@ -22,7 +22,7 @@ FastImageViewProps::FastImageViewProps(const PropsParserContext &context, const 
       source(convertRawProp(context, rawProps, "source", sourceProps.source, {})),
       defaultSource(convertRawProp(context, rawProps, "defaultSource", sourceProps.defaultSource, {})),
       resizeMode(
-          convertRawProp(context, rawProps, "resizeMode", sourceProps.resizeMode, {FastImageViewResizeMode::Cover})),
+          convertRawProp(context, rawProps, "resizeMode", sourceProps.resizeMode, {facebook::react::FastImageViewResizeMode::Cover})),
       tintColor(convertRawProp(context, rawProps, "tintColor", sourceProps.tintColor, {})) {}
 
 } // namespace react

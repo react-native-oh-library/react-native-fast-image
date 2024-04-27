@@ -7,17 +7,42 @@ namespace rnoh {
 
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
     : CppComponentInstance(std::move(context)) {
-  this->getLocalRootArkUINode().setNodeDelegate(this);
-  this->getLocalRootArkUINode().setInterpolation(
-      ARKUI_IMAGE_INTERPOLATION_HIGH);
-  this->getLocalRootArkUINode().setDraggable(false);
+    this->getLocalRootArkUINode().setNodeDelegate(this);
+    this->getLocalRootArkUINode().setInterpolation(ARKUI_IMAGE_INTERPOLATION_HIGH);
+    this->getLocalRootArkUINode().setDraggable(false);
 }
 
-void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const& props) {
-  CppComponentInstance::onPropsChanged(props);
-//   auto rawProps = ImageRawProps::getFromDynamic(props->rawProps);
+void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
+    CppComponentInstance::onPropsChanged(props);
     LOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
+    LOG(INFO) << "[FastImage] Props->source.uri: " << props->source.uri;
+    LOG(INFO) << "[FastImage] Props->resizeMode: " << facebook::react::toString(props->resizeMode);
+    if (!props->source.headers.empty()) {
+        for (auto header: props->source.headers) {
+            LOG(INFO) << "[FastImage] Props->headers.name: " << header.name;
+            LOG(INFO) << "[FastImage] Props->headers.value: " << header.value;
+        }
+    }
+    if (!m_props || m_props->source.uri != props->source.uri) {
+        facebook::react::ImageSources imageSoures;
+        facebook::react::ImageSource imageSoure;
+        imageSoure.uri = props->source.uri;
+        imageSoures.push_back(imageSoure);
+        this->getLocalRootArkUINode().setSources(imageSoures);
+        if (!this->getLocalRootArkUINode().getUri().empty()) {
+            onLoadStart();
+        }
+    }
+    if (!m_props || m_props->resizeMode != props->resizeMode) {
+        this->getLocalRootArkUINode().setResizeMode(convertToImageResizeMode(props->resizeMode));
+    }
 
+    if (!m_props || m_props->defaultSource != props->defaultSource) {
+        this->getLocalRootArkUINode().setAlt(props->defaultSource);
+    }
+    if (!m_props || m_props->tintColor != props->tintColor) {
+        this->getLocalRootArkUINode().setTintColor(props->tintColor);
+    }
 }
 
 // void FastImageViewComponentInstance::onStateChanged(SharedConcreteState const& state) {
@@ -27,74 +52,41 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const& p
 //   this->getLocalRootArkUINode().setBlur(state->getData().getBlurRadius());
 // }
 
-ImageNode& FastImageViewComponentInstance::getLocalRootArkUINode() {
-  return m_imageNode;
+ImageNode &FastImageViewComponentInstance::getLocalRootArkUINode() { return m_imageNode; }
+
+void FastImageViewComponentInstance::onComplete(float width, float height) {
+    if (m_eventEmitter == nullptr) {
+        return;
+    }
+    m_eventEmitter->onFastImageLoad({width, height});
+    m_eventEmitter->onFastImageProgress({1, 1});
+    m_eventEmitter->onFastImageLoadEnd({});
 }
 
-// void ImageComponentInstance::onComplete(float width, float height) {
-//   if (m_eventEmitter == nullptr) {
-//     return;
-//   }
-//
-//   std::string uri = this->getLocalRootArkUINode().getUri();
-//   m_eventEmitter->dispatchEvent("load", [=](facebook::jsi::Runtime& runtime) {
-//     auto payload = facebook::jsi::Object(runtime);
-//     auto source = facebook::jsi::Object(runtime);
-//     source.setProperty(runtime, "width", width);
-//     source.setProperty(runtime, "height", height);
-//     source.setProperty(runtime, "uri", uri.c_str());
-//     payload.setProperty(runtime, "source", source);
-//     return payload;
-//   });
-//   m_eventEmitter->onLoadEnd();
-// }
+void FastImageViewComponentInstance::onError(int32_t errorCode) {
+  if (m_eventEmitter == nullptr) {
+    return;
+  }
+  m_eventEmitter->onFastImageLoadEnd({});
+}
 
-// void ImageComponentInstance::onError(int32_t errorCode) {
-//   if (m_eventEmitter == nullptr) {
-//     return;
-//   }
-//
-//   std::string errMsg = "error message: the image load failed, ";
-//   if (errorCode == 401) {
-//     errMsg =
-//         "error message: the image could not be obtained because the image path is invalid, ";
-//   } else if (errorCode == 103101) {
-//     errMsg = "error message: the image format is not supported, ";
-//   }
-//
-//   errMsg += std::string("error code: ") + std::to_string(errorCode);
-//   m_eventEmitter->dispatchEvent(
-//       "error", [errMsg](facebook::jsi::Runtime& runtime) {
-//         auto payload = facebook::jsi::Object(runtime);
-//         auto source = facebook::jsi::Object(runtime);
-//         source.setProperty(runtime, "error", errMsg);
-//         payload.setProperty(runtime, "source", source);
-//         return payload;
-//       });
-//   m_eventEmitter->onLoadEnd();
-// }
-//
-// void ImageComponentInstance::onLoadStart() {
-//   if (m_eventEmitter) {
-//     m_eventEmitter->onLoadStart();
-//   }
-// }
+void FastImageViewComponentInstance::onLoadStart() {
+  if (m_eventEmitter) {
+    m_eventEmitter->onFastImageLoadStart({});
+  }
+}
 
-// FastImageViewComponentInstance::ImageRawProps
-// FastImageViewComponentInstance::ImageRawProps::getFromDynamic(folly::dynamic value) {
-//   auto resizeMode = (value.count("resizeMode") > 0)
-//       ? std::optional(value["resizeMode"].asString())
-//       : std::nullopt;
-//   auto focusable = (value.count("focusable") > 0)
-//       ? std::optional(value["focusable"].asBool())
-//       : std::nullopt;
-//   auto alt = (value.count("alt") > 0) ? std::optional(value["alt"].asString())
-//                                       : std::nullopt;
-//   auto loadingIndicatorSource = (value.count("loadingIndicatorSource") > 0)
-//       ? std::optional(value["loadingIndicatorSource"].at("uri").getString())
-//       : std::nullopt;
-//
-//   return {resizeMode, focusable, alt, loadingIndicatorSource};
-// }
+facebook::react::ImageResizeMode FastImageViewComponentInstance::convertToImageResizeMode(facebook::react::FastImageViewResizeMode mode) {
+  switch (mode) {
+  case facebook::react::FastImageViewResizeMode::Contain:
+        return facebook::react::ImageResizeMode::Contain;
+  case facebook::react::FastImageViewResizeMode::Cover:
+        return facebook::react::ImageResizeMode::Cover;
+  case facebook::react::FastImageViewResizeMode::Stretch:
+        return facebook::react::ImageResizeMode::Stretch;
+  case facebook::react::FastImageViewResizeMode::Center:
+        return facebook::react::ImageResizeMode::Center;
+  }
+}
 
 } // namespace rnoh

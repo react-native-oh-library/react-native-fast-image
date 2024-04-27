@@ -28,9 +28,9 @@ public:
     };
 };
 
-class FastImageViewPackage : public Package {
+class FastImagePackage : public Package {
 public:
-    FastImageViewPackage(Package::Context ctx) : Package(ctx) {}
+    FastImagePackage(Package::Context ctx) : Package(ctx) {}
 
     std::unique_ptr<TurboModuleFactoryDelegate> createTurboModuleFactoryDelegate() override {
         return std::make_unique<FastImageTurboModuleFactoryDelegate>();

@@ -216,6 +216,7 @@ export struct RNFastImage {
           .focusable(this.descriptorWrapper?.focusable ?? false)
           .hitTestBehavior(HitTestMode.None)
           .onComplete((event) => {
+            console.info(`on complete`)
             if (event) {
               if (event.loadingStatus) {
                 this.onLoadEnd();

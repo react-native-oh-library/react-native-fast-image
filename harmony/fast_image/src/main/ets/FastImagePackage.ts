@@ -27,10 +27,13 @@ import { RNPackage, TurboModulesFactory } from '@rnoh/react-native-openharmony/t
 import type {
   TurboModule,
   TurboModuleContext,
+  DescriptorWrapperFactoryByDescriptorTypeCtx,
+  DescriptorWrapperFactoryByDescriptorType,
 } from '@rnoh/react-native-openharmony/ts';
 import {RNCFastImageViewTurboModule} from './RNCFastImageViewTurboModule';
 import app from '@system.app'
 import {RNCFastImageView} from './TMSpecs'
+import {FastImageView} from './RNCSpecs'
 class FastImageTurboModulesFactory extends TurboModulesFactory {
   createTurboModule(name: string): TurboModule | null {
     if (name === RNCFastImageView.NAME) {
@@ -55,6 +58,10 @@ export class FastImagePackage extends RNPackage {
     }
     return new FastImageTurboModulesFactory(ctx);
   }
-
+  createDescriptorWrapperFactoryByDescriptorType(ctx: DescriptorWrapperFactoryByDescriptorTypeCtx): DescriptorWrapperFactoryByDescriptorType {
+    return {
+      [FastImageView.NAME]: (ctx) => new FastImageView.DescriptorWrapper(ctx.descriptor)
+    }
+  }
 
 }
