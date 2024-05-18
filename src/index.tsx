@@ -161,7 +161,8 @@ const resolveDefaultSource = (
     if (!defaultSource) {
         return null
     }
-    if (Platform.OS === 'android') {
+    // @ts-ignore
+    if (Platform.OS === 'android' || Platform.OS === 'harmony') {
         // Android receives a URI string, and resolves into a Drawable using RN's methods.
         const resolved = Image.resolveAssetSource(
             defaultSource as ImageRequireSource,
