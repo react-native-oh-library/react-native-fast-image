@@ -13,6 +13,8 @@ private:
     std::string m_uri;
     // used for find local cache of uri, if not find return uri
     std::string FindLocalCacheByUri(std::string const &uri);
+    std::string getBundlePath();
+    std::string getAbsolutePathPrefix(std::string const &bundlePath);
 
 public:
     FastImageViewComponentInstance(Context context);

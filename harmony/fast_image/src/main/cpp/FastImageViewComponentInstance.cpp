@@ -5,6 +5,9 @@
 
 namespace rnoh {
 
+const std::string BUNDLE_HARMONY_JS = "bundle.harmony.js";
+const std::string RAWFILE_PREFIX = "resource://RAWFILE/assets/";
+
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
     : CppComponentInstance(std::move(context)) {
     this->getLocalRootArkUINode().setNodeDelegate(this);
@@ -35,6 +38,34 @@ std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string cons
     return cache.asString();
 }
 
+std::string FastImageViewComponentInstance::getBundlePath() {
+    auto rnInstance = m_deps->rnInstance.lock();
+    if (!rnInstance) {
+        return BUNDLE_HARMONY_JS;
+    }
+
+    auto internalInstance = std::dynamic_pointer_cast<RNInstanceInternal>(rnInstance);
+    if (!internalInstance) {
+        return BUNDLE_HARMONY_JS;
+    }
+
+    return internalInstance->getBundlePath();
+}
+
+std::string FastImageViewComponentInstance::getAbsolutePathPrefix(std::string const &bundlePath) {
+    if (bundlePath.find('/', 0) != 0) {
+        return RAWFILE_PREFIX;
+    }
+
+    auto pos = bundlePath.rfind('/');
+    if (pos == std::string::npos) {
+        return RAWFILE_PREFIX;
+    }
+
+    std::string prefix = "file://" + bundlePath.substr(0, pos + 1);
+    return prefix;
+}
+        
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
     LOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
@@ -52,7 +83,7 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     if (!m_props || m_props->source.uri != props->source.uri) {
         m_uri = props->source.uri;
         std::string uri = FindLocalCacheByUri(props->source.uri);
-        this->getLocalRootArkUINode().setSources(uri);
+        this->getLocalRootArkUINode().setSources(uri,getAbsolutePathPrefix(getBundlePath()));
         if (!m_uri.empty()) {
             onLoadStart();
         }
@@ -64,7 +95,7 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     if (!m_props || m_props->defaultSource != props->defaultSource) {
 
         if (!(props->defaultSource.empty())) {
-            this->getLocalRootArkUINode().setAlt(props->defaultSource);
+            this->getLocalRootArkUINode().setAlt(props->defaultSource,getAbsolutePathPrefix(getBundlePath()));
         }
     }
 
