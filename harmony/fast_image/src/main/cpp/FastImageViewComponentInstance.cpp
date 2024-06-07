@@ -2,11 +2,11 @@
 #include "Props.h"
 #include <react/renderer/core/ConcreteState.h>
 #include <sstream>
-#include <iostream>
-#include <iomanip>
-#include <string>
 
 namespace rnoh {
+
+const std::string BUNDLE_HARMONY_JS = "bundle.harmony.js";
+const std::string RAWFILE_PREFIX = "resource://RAWFILE/assets/";
 
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
     : CppComponentInstance(std::move(context)) {
@@ -38,6 +38,34 @@ std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string cons
     return cache.asString();
 }
 
+std::string FastImageViewComponentInstance::getBundlePath() {
+    auto rnInstance = m_deps->rnInstance.lock();
+    if (!rnInstance) {
+        return BUNDLE_HARMONY_JS;
+    }
+
+    auto internalInstance = std::dynamic_pointer_cast<RNInstanceInternal>(rnInstance);
+    if (!internalInstance) {
+        return BUNDLE_HARMONY_JS;
+    }
+
+    return internalInstance->getBundlePath();
+}
+
+std::string FastImageViewComponentInstance::getAbsolutePathPrefix(std::string const &bundlePath) {
+    if (bundlePath.find('/', 0) != 0) {
+        return RAWFILE_PREFIX;
+    }
+
+    auto pos = bundlePath.rfind('/');
+    if (pos == std::string::npos) {
+        return RAWFILE_PREFIX;
+    }
+
+    std::string prefix = "file://" + bundlePath.substr(0, pos + 1);
+    return prefix;
+}
+
 std::string charToHex(unsigned char c) {
     std::ostringstream oss;
     oss << '%' << std::setw(2) << std::setfill('0') << std::hex << std::uppercase << static_cast<int>(c);
@@ -56,10 +84,14 @@ std::string urlEncode(const std::string& str) {
     }
     return encoded.str();
 }
-
+        
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
-   
+    LOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
+    LOG(INFO) << "[FastImage] Props->source.uri: " << props->source.uri;
+    LOG(INFO) << "[FastImage] Props->resizeMode: " << facebook::react::toString(props->resizeMode);
+    LOG(INFO) << "[FastImage] Props->defaultSource: " << props->defaultSource;
+    
     if (!props->source.headers.empty()) {
         for (auto header : props->source.headers) {
             LOG(INFO) << "[FastImage] Props->headers.name: " << header.name;
@@ -68,10 +100,10 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     }
 
     if (!m_props || m_props->source.uri != props->source.uri) {
-        m_uri = props->source.uri;
+         m_uri = props->source.uri;
          std::string encodedUri = urlEncode(m_uri);
          std::string uri = FindLocalCacheByUri(encodedUri);
-        this->getLocalRootArkUINode().setSources(uri);
+        this->getLocalRootArkUINode().setSources(uri,getAbsolutePathPrefix(getBundlePath()));
         if (!m_uri.empty()) {
             onLoadStart();
         }
@@ -83,7 +115,7 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     if (!m_props || m_props->defaultSource != props->defaultSource) {
 
         if (!(props->defaultSource.empty())) {
-            this->getLocalRootArkUINode().setAlt(props->defaultSource);
+            this->getLocalRootArkUINode().setAlt(props->defaultSource,getAbsolutePathPrefix(getBundlePath()));
         }
     }
 
