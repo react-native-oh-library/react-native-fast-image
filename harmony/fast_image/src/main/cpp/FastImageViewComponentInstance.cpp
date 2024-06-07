@@ -2,11 +2,11 @@
 #include "Props.h"
 #include <react/renderer/core/ConcreteState.h>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
+#include <string>
 
 namespace rnoh {
-
-const std::string BUNDLE_HARMONY_JS = "bundle.harmony.js";
-const std::string RAWFILE_PREFIX = "resource://RAWFILE/assets/";
 
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
     : CppComponentInstance(std::move(context)) {
@@ -16,21 +16,25 @@ FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
 }
 std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string const &uri) {
     if (uri.find("http", 0) != 0) {
+         LOG(INFO) << "[FastImage] Props->uri1: ";
         return uri;
     }
 
     auto rnInstance = m_deps->rnInstance.lock();
     if (!rnInstance) {
+         LOG(INFO) << "[FastImage] Props->uri2: " ;
         return uri;
     }
 
     auto turboModule = rnInstance->getTurboModule("ImageLoader");
     if (!turboModule) {
+         LOG(INFO) << "[FastImage] Props->uri3: " ;
         return uri;
     }
 
     auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::ArkTSTurboModule>(turboModule);
     if (!arkTsTurboModule) {
+         LOG(INFO) << "[FastImage] Props->uri4: ";
         return uri;
     }
 
@@ -38,52 +42,42 @@ std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string cons
     return cache.asString();
 }
 
-std::string FastImageViewComponentInstance::getBundlePath() {
-    auto rnInstance = m_deps->rnInstance.lock();
-    if (!rnInstance) {
-        return BUNDLE_HARMONY_JS;
-    }
-
-    auto internalInstance = std::dynamic_pointer_cast<RNInstanceInternal>(rnInstance);
-    if (!internalInstance) {
-        return BUNDLE_HARMONY_JS;
-    }
-
-    return internalInstance->getBundlePath();
+std::string charToHex(unsigned char c) {
+    std::ostringstream oss;
+    oss << '%' << std::setw(2) << std::setfill('0') << std::hex << std::uppercase << static_cast<int>(c);
+    return oss.str();
 }
 
-std::string FastImageViewComponentInstance::getAbsolutePathPrefix(std::string const &bundlePath) {
-    if (bundlePath.find('/', 0) != 0) {
-        return RAWFILE_PREFIX;
+std::string urlEncode(const std::string& str) {
+    std::ostringstream encoded;
+    for (char c : str) {
+       if (isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_' || c == '.' || c == '~' || c == '/' ||
+        c== ':' || c== '=' || c== ',' || c== '.' || c== '&' || c== '%' || c == '$' || c == '*' || c == '$' || c == '^') {
+            encoded << c; // 不需要编码的字符
+        } else {
+            encoded << charToHex(static_cast<unsigned char>(c)); // 需要编码的字符
+        }
     }
-
-    auto pos = bundlePath.rfind('/');
-    if (pos == std::string::npos) {
-        return RAWFILE_PREFIX;
-    }
-
-    std::string prefix = "file://" + bundlePath.substr(0, pos + 1);
-    return prefix;
+    return encoded.str();
 }
-        
+
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
-    LOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
-    LOG(INFO) << "[FastImage] Props->source.uri: " << props->source.uri;
-    LOG(INFO) << "[FastImage] Props->resizeMode: " << facebook::react::toString(props->resizeMode);
-    LOG(INFO) << "[FastImage] Props->defaultSource: " << props->defaultSource;
-    
+   
+
     if (!props->source.headers.empty()) {
         for (auto header : props->source.headers) {
             LOG(INFO) << "[FastImage] Props->headers.name: " << header.name;
             LOG(INFO) << "[FastImage] Props->headers.value: " << header.value;
         }
     }
+ 
 
     if (!m_props || m_props->source.uri != props->source.uri) {
         m_uri = props->source.uri;
-        std::string uri = FindLocalCacheByUri(props->source.uri);
-        this->getLocalRootArkUINode().setSources(uri,getAbsolutePathPrefix(getBundlePath()));
+         std::string encodedUri = urlEncode(m_uri);
+         std::string uri = FindLocalCacheByUri(encodedUri);
+        this->getLocalRootArkUINode().setSources(uri);
         if (!m_uri.empty()) {
             onLoadStart();
         }
@@ -95,7 +89,7 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     if (!m_props || m_props->defaultSource != props->defaultSource) {
 
         if (!(props->defaultSource.empty())) {
-            this->getLocalRootArkUINode().setAlt(props->defaultSource,getAbsolutePathPrefix(getBundlePath()));
+            this->getLocalRootArkUINode().setAlt(props->defaultSource);
         }
     }
 
@@ -117,6 +111,7 @@ void FastImageViewComponentInstance::onComplete(float width, float height) {
     if (m_eventEmitter == nullptr) {
         return;
     }
+       LOG(INFO) << "[FastImage] Props->uri9: ";
     m_eventEmitter->onFastImageLoad({width, height});
     m_eventEmitter->onFastImageProgress({1, 1});
     m_eventEmitter->onFastImageLoadEnd({});
@@ -131,6 +126,7 @@ void FastImageViewComponentInstance::onError(int32_t errorCode) {
 
 void FastImageViewComponentInstance::onLoadStart() {
     if (m_eventEmitter) {
+           LOG(INFO) << "[FastImage] Props->uri8: ";
         m_eventEmitter->onFastImageLoadStart({});
     }
 }
