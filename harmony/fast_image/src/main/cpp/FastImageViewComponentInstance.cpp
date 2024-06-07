@@ -16,25 +16,21 @@ FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
 }
 std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string const &uri) {
     if (uri.find("http", 0) != 0) {
-         LOG(INFO) << "[FastImage] Props->uri1: ";
         return uri;
     }
 
     auto rnInstance = m_deps->rnInstance.lock();
     if (!rnInstance) {
-         LOG(INFO) << "[FastImage] Props->uri2: " ;
         return uri;
     }
 
     auto turboModule = rnInstance->getTurboModule("ImageLoader");
     if (!turboModule) {
-         LOG(INFO) << "[FastImage] Props->uri3: " ;
         return uri;
     }
 
     auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::ArkTSTurboModule>(turboModule);
     if (!arkTsTurboModule) {
-         LOG(INFO) << "[FastImage] Props->uri4: ";
         return uri;
     }
 
@@ -109,7 +105,6 @@ void FastImageViewComponentInstance::onComplete(float width, float height) {
     if (m_eventEmitter == nullptr) {
         return;
     }
-       LOG(INFO) << "[FastImage] Props->uri9: ";
     m_eventEmitter->onFastImageLoad({width, height});
     m_eventEmitter->onFastImageProgress({1, 1});
     m_eventEmitter->onFastImageLoadEnd({});
@@ -124,7 +119,6 @@ void FastImageViewComponentInstance::onError(int32_t errorCode) {
 
 void FastImageViewComponentInstance::onLoadStart() {
     if (m_eventEmitter) {
-           LOG(INFO) << "[FastImage] Props->uri8: ";
         m_eventEmitter->onFastImageLoadStart({});
     }
 }
