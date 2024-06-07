@@ -64,14 +64,12 @@ std::string urlEncode(const std::string& str) {
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
    
-
     if (!props->source.headers.empty()) {
         for (auto header : props->source.headers) {
             LOG(INFO) << "[FastImage] Props->headers.name: " << header.name;
             LOG(INFO) << "[FastImage] Props->headers.value: " << header.value;
         }
     }
- 
 
     if (!m_props || m_props->source.uri != props->source.uri) {
         m_uri = props->source.uri;
