@@ -24,3 +24,4 @@
 
 export * from './src/main/ets/RNFastImage'
 export * from "./src/main/ets/FastImagePackage"
+export * from "./ts";

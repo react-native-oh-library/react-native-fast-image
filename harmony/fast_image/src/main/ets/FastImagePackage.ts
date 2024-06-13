@@ -1,3 +1,4 @@
+
 /*
  * MIT License
  *
@@ -27,21 +28,22 @@ import type {
   TurboModule,
   TurboModuleContext,
   DescriptorWrapperFactoryByDescriptorTypeCtx,
-  DescriptorWrapperFactoryByDescriptorType
+  DescriptorWrapperFactoryByDescriptorType,
 } from '@rnoh/react-native-openharmony/ts';
-import { TM, RNC } from "@rnoh/react-native-openharmony/generated/ts"
 import {RNCFastImageViewTurboModule} from './RNCFastImageViewTurboModule';
 import app from '@system.app'
+import {RNCFastImageView} from './TMSpecs'
+import {FastImageView} from './RNCSpecs'
 class FastImageTurboModulesFactory extends TurboModulesFactory {
   createTurboModule(name: string): TurboModule | null {
-    if (name === TM.RNCFastImageView.NAME) {
+    if (name === RNCFastImageView.NAME) {
       return new RNCFastImageViewTurboModule(this.ctx);
     }
     return null;
   }
 
   hasTurboModule(name: string): boolean {
-    return name === TM.RNCFastImageView.NAME;
+    return name === RNCFastImageView.NAME;
   }
 }
 
@@ -56,10 +58,10 @@ export class FastImagePackage extends RNPackage {
     }
     return new FastImageTurboModulesFactory(ctx);
   }
-
   createDescriptorWrapperFactoryByDescriptorType(ctx: DescriptorWrapperFactoryByDescriptorTypeCtx): DescriptorWrapperFactoryByDescriptorType {
     return {
-      [RNC.FastImageView.NAME]: (ctx) => new RNC.FastImageView.DescriptorWrapper(ctx.descriptor)
+      [FastImageView.NAME]: (ctx) => new FastImageView.DescriptorWrapper(ctx.descriptor)
     }
   }
+
 }
