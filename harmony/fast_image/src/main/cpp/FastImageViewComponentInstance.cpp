@@ -103,8 +103,8 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
 
     if (!m_props || m_props->source.uri != props->source.uri) {
         m_uri = props->source.uri;
-        std::string encodedUri = urlEncode(m_uri);
-        std::string uri = FindLocalCacheByUri(encodedUri);
+        //std::string encodedUri = urlEncode(m_uri);
+        std::string uri = FindLocalCacheByUri(m_uri);
         this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
         if (!m_uri.empty()) {
             onLoadStart();
