@@ -89,15 +89,15 @@ std::string urlEncode(const std::string &str) {
 
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
-    DLOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
-    DLOG(INFO) << "[FastImage] Props->source.uri: " << props->source.uri;
-    DLOG(INFO) << "[FastImage] Props->resizeMode: " << facebook::react::toString(props->resizeMode);
-    DLOG(INFO) << "[FastImage] Props->defaultSource: " << props->defaultSource;
+    LOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
+    LOG(INFO) << "[FastImage] Props->source.uri: " << props->source.uri;
+    LOG(INFO) << "[FastImage] Props->resizeMode: " << facebook::react::toString(props->resizeMode);
+    LOG(INFO) << "[FastImage] Props->defaultSource: " << props->defaultSource;
 
     if (!props->source.headers.empty()) {
         for (auto header : props->source.headers) {
-            DLOG(INFO) << "[FastImage] Props->headers.name: " << header.name;
-            DLOG(INFO) << "[FastImage] Props->headers.value: " << header.value;
+            LOG(INFO) << "[FastImage] Props->headers.name: " << header.name;
+            LOG(INFO) << "[FastImage] Props->headers.value: " << header.value;
         }
     }
 
