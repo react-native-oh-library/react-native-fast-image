@@ -18,7 +18,7 @@ namespace rnoh {
         return (uri.scheme() == httpPrefix || uri.scheme() == httpsPrefix || uri.scheme() == ftpPrefix) && uri.host() != localhostPrefix;
     }
 
-    std::string FastImageSource::getSource() {
+    std::string FastImageSource::getUri() {
         if (source.uri.empty()) {
             return source.uri;
         }

@@ -15,7 +15,7 @@ namespace rnoh {
             source = source_;
         };
     
-        std::string getSource();
+        std::string getUri();
         
         private:
         facebook::react::FastImageViewSourceStruct source;
