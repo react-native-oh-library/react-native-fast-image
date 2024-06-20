@@ -68,26 +68,6 @@ std::string FastImageViewComponentInstance::getAbsolutePathPrefix(std::string co
     return prefix;
 }
 
-std::string charToHex(unsigned char c) {
-    std::ostringstream oss;
-    oss << '%' << std::setw(2) << std::setfill('0') << std::hex << std::uppercase << static_cast<int>(c);
-    return oss.str();
-}
-
-std::string urlEncode(const std::string &str) {
-    std::ostringstream encoded;
-    for (char c : str) {
-        if (isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_' || c == '.' || c == '~' || c == '/' ||
-            c == ':' || c == '=' || c == ',' || c == '.' || c == '&' || c == '%' || c == '$' || c == '*' || c == '$' ||
-            c == '^') {
-            encoded << c; // 不需要编码的字符
-        } else {
-            encoded << charToHex(static_cast<unsigned char>(c)); // 需要编码的字符
-        }
-    }
-    return encoded.str();
-}
-
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
     DLOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
@@ -104,8 +84,7 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
 
     if (!m_props || m_props->source.uri != props->source.uri) {
         m_uri = props->source.uri;
-        //std::string encodedUri = urlEncode(m_uri);
-        FastImageSource fastImageSource(m_uri);
+        FastImageSource fastImageSource(props->source);
         std::string uri = fastImageSource.getSource();
         //std::string uri = FindLocalCacheByUri(m_uri);
         this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));

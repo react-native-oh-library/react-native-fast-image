@@ -5,9 +5,7 @@
 // please include "napi/native_api.h".
 
 #include "FastImageSource.h"
-#include "Props.h"
 #include <regex>
-
 
 namespace rnoh {
 
@@ -21,21 +19,20 @@ namespace rnoh {
     }
 
     std::string FastImageSource::getSource() {
-        if (source.empty()) {
-            return source;
+        if (source.uri.empty()) {
+            return source.uri;
         }
-        std::string handleResult = source;
-        Uri c_uri(source);
+        std::string handleResult = source.uri;
+        Uri c_uri(handleResult);
         if (isUriRes(c_uri)) {
-            DLOG(INFO) << "[liwang_Uri] scheme=" << c_uri.scheme();
-            DLOG(INFO) << "[liwang_Uri] 需要转义的网络资源地址 path=" << c_uri.path();
+            DLOG(INFO) << "[FastImage] uri path=" << c_uri.path();
             handleResult = c_uri.getEncodeUri();
-            DLOG(INFO) << "[liwang_Uri] 转义结果 handleResult=" << handleResult;
+            DLOG(INFO) << "[FastImage] encode result=" << handleResult;
             return handleResult;
         }
         //base64's scheme is [data], need add by self
-        if (isValidBase64(source) && c_uri.scheme() == "") {
-            handleResult = "data:image/jpeg;base64," + source;
+        if (isValidBase64(handleResult) && c_uri.scheme() == "") {
+            handleResult = "data:image/jpeg;base64," + handleResult;
             return handleResult;
         }
         return handleResult;

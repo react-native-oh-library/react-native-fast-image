@@ -1,5 +1,5 @@
 #pragma once
-#define FOLLY_URI_H_
+#define FASTIMAGE_URI_H_
 #include <string>
 #include <vector>
 #include <folly/String.h>
