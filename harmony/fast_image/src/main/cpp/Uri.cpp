@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cctype>
 #include <boost/regex.hpp>
+#include <iomanip>
+#include <sstream>
 
 namespace rnoh {
 
@@ -80,6 +82,10 @@ Uri::Uri(folly::StringPiece str) : hasAuthority_(false), port_(0) {
 
   query_ = submatch(match, 3);
   fragment_ = submatch(match, 4);
+    
+  std::string subPrefix = scheme_ + "://";
+  std::string source = str.str();
+  encodeUri_ = subPrefix + uriEncode(source.substr(subPrefix.length(), source.length()), "@#&=*+-_.,:!?()/~'%;$");
 }
 
 std::string Uri::authority() const {
@@ -144,4 +150,45 @@ const std::vector<std::pair<std::string, std::string>>& Uri::getQueryParams() {
   return queryParams_;
 }
 
-} // namespace folly
+
+std::string Uri::uriEncode(const std::string &s, const std::string &allow) {
+    if (s.empty()) {
+        return s;
+    }
+    std::ostringstream encoded;
+    size_t oldLength = s.length();
+    size_t current = 0;
+
+    while (current < oldLength) {
+        size_t nextToEncode = current;
+        while (nextToEncode < oldLength && isAllowedEncode(s[nextToEncode], allow)) {
+            nextToEncode++;
+        }
+        if (nextToEncode == oldLength) {
+            if (current == 0) {
+                return s;
+            } else {
+                encoded << s.substr(current, oldLength - current);
+                return encoded.str();
+            }
+        }
+        if (nextToEncode > current) {
+            encoded << s.substr(current, nextToEncode - current);
+        }
+        current = nextToEncode;
+        size_t nextAllowed = current + 1;
+        while (nextAllowed < oldLength && !isAllowedEncode(s[nextAllowed], allow)) {
+            nextAllowed++;
+        }
+        std::string toEncode = s.substr(current, nextAllowed - current);
+        for (char c : toEncode) {
+            encoded << '%' << std::uppercase << std::hex << std::setw(2) << std::setfill('0')
+                    << static_cast<int>(static_cast<unsigned char>(c));
+        }
+
+        current = nextAllowed;
+    }
+    return encoded.str();
+}
+
+} // namespace rnoh

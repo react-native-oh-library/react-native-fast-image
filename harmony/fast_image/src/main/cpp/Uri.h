@@ -86,6 +86,10 @@ class Uri {
    *          one is parameter value
    */
   const std::vector<std::pair<std::string, std::string>>& getQueryParams();
+    
+  bool isAllowedEncode(char c, const std::string &allow) { return allow.find(c) != std::string::npos; }
+  std::string uriEncode(const std::string &s, const std::string &allow);
+  std::string& getEncodeUri(){ return encodeUri_; };
 
  private:
   std::string scheme_;
@@ -98,6 +102,7 @@ class Uri {
   std::string query_;
   std::string fragment_;
   std::vector<std::pair<std::string, std::string>> queryParams_;
+  std::string encodeUri_;
 };
 
 } // namespace rnoh
