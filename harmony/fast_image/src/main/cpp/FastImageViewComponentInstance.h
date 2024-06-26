@@ -1,15 +1,16 @@
 #pragma once
 
 #include "EventEmitters.h"
+#include "FastImageNode.h"
 #include "ShadowNodes.h"
 #include "RNOH/CppComponentInstance.h"
 #include "RNOH/arkui/ImageNode.h"
 
 namespace rnoh {
 class FastImageViewComponentInstance : public CppComponentInstance<facebook::react::FastImageViewShadowNode>,
-                                       public ImageNodeDelegate {
+                                       public FastImageNodeDelegate {
 private:
-    ImageNode m_imageNode;
+    FastImageNode m_imageNode;
     std::string m_uri;
     // used for find local cache of uri, if not find return uri
     std::string FindLocalCacheByUri(std::string const &uri);
@@ -27,6 +28,6 @@ public:
 
     facebook::react::ImageResizeMode convertToImageResizeMode(facebook::react::FastImageViewResizeMode mode);
 
-    ImageNode &getLocalRootArkUINode() override;
+    FastImageNode &getLocalRootArkUINode() override;
 };
 } // namespace rnoh
