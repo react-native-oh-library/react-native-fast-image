@@ -115,7 +115,7 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
 //   this->getLocalRootArkUINode().setBlur(state->getData().getBlurRadius());
 // }
 
-ImageNode &FastImageViewComponentInstance::getLocalRootArkUINode() { return m_imageNode; }
+FastImageNode &FastImageViewComponentInstance::getLocalRootArkUINode() { return m_imageNode; }
 
 void FastImageViewComponentInstance::onComplete(float width, float height) {
     if (m_eventEmitter == nullptr) {
