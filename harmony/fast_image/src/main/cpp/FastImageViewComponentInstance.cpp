@@ -117,12 +117,17 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
 
 FastImageNode &FastImageViewComponentInstance::getLocalRootArkUINode() { return m_imageNode; }
 
+void FastImageViewComponentInstance::onProgress(uint32_t loaded, uint32_t total) {
+    if (m_eventEmitter) {
+        m_eventEmitter->onFastImageProgress({static_cast<int>(loaded), static_cast<int>(total)});
+    }
+}
+
 void FastImageViewComponentInstance::onComplete(float width, float height) {
     if (m_eventEmitter == nullptr) {
         return;
     }
     m_eventEmitter->onFastImageLoad({width, height});
-    m_eventEmitter->onFastImageProgress({1, 1});
     m_eventEmitter->onFastImageLoadEnd({});
 }
 
@@ -130,7 +135,7 @@ void FastImageViewComponentInstance::onError(int32_t errorCode) {
     if (m_eventEmitter == nullptr) {
         return;
     }
-    m_eventEmitter->onFastImageLoadEnd({});
+    m_eventEmitter->onFastImageError({});
 }
 
 void FastImageViewComponentInstance::onLoadStart() {
