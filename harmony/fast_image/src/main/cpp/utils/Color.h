@@ -68,19 +68,7 @@ public:
     uint8_t GetGreen() const { return colorValue_.argb.green; }
 
     uint8_t GetBlue() const { return colorValue_.argb.blue; }
-
-    bool operator==(const Color &color) const { return colorValue_.value == color.GetValue(); }
-
-    bool operator!=(const Color &color) const { return !operator==(color); }
-
-    Color operator+(const Color &color) const;
-
-    Color operator-(const Color &color) const;
-
-    Color operator*(double value) const;
-
-    Color operator/(double value) const;
-
+    
     std::string ToString() const {
         return "[ARGB](" + std::to_string(colorValue_.argb.alpha) + ", " + std::to_string(colorValue_.argb.red) + ", " +
                std::to_string(colorValue_.argb.green) + ", " + std::to_string(colorValue_.argb.blue) + ")";
@@ -88,15 +76,8 @@ public:
 
 private:
     constexpr explicit Color(ColorParam colorValue) : colorValue_(colorValue) {}
-
-    static double ConvertGammaToLinear(uint8_t value);
-    static void ConvertGammaToLinear(const Color &gammaColor, double &linearRed, double &linearGreen,
-                                     double &linearBlue);
-    static uint8_t ConvertLinearToGamma(double value);
-    static Color ConvertLinearToGamma(double alpha, double linearRed, double linearGreen, double linearBlue);
     
     ColorParam colorValue_{.value = 0xff000000};
-    bool UseCurrentColor{false};
 };
 
 } // namespace fastimage

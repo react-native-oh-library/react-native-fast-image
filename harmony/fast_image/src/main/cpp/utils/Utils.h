@@ -1,62 +1,42 @@
 #pragma once
+#include "Color.h"
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <iostream>
+#include <vector>
+#include <string>
 
-#define CHECK_NULL_VOID(ptr)                                                                                           \
-    do {                                                                                                               \
-        if (!(ptr)) {                                                                                                  \
-            return;                                                                                                    \
-        }                                                                                                              \
-    } while (0)
-
-#define CHECK_NULL_RETURN(ptr, ret)                                                                                    \
-    do {                                                                                                               \
-        if (!(ptr)) {                                                                                                  \
-            return ret;                                                                                                \
-        }                                                                                                              \
-    } while (0)
-
-#define CHECK_ERROR_CODE_RETURN(code)                                                                                  \
-    do {                                                                                                               \
-        if ((code) > 0) {                                                                                              \
-            return code;                                                                                               \
-        }                                                                                                              \
-    } while (0)
-
-#define CHECK_EQUAL_VOID(var, value)                                                                                   \
-    do {                                                                                                               \
-        if ((var) == (value)) {                                                                                        \
-            return;                                                                                                    \
-        }                                                                                                              \
-    } while (0)
+using namespace std;
 
 namespace rnoh {
 namespace fastimage{
 
-template<typename T, std::size_t N>
-constexpr std::size_t ArraySize(T (&)[N]) noexcept
-{
-    return N;
+inline int BinarySearch(vector<pair<string, Color>> &colors, const string &targetColor) {
+    int left = 0;
+    int right = colors.size() - 1;
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        if (colors[mid].first == targetColor) {
+            return mid;
+        } else if (colors[mid].first < targetColor) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    return -1;
 }
 
-inline bool NearEqual(const double left, const double right, const double epsilon)
-{
-    return (std::abs(left - right) <= epsilon);
-}
-
-template<typename T>
-constexpr bool NearEqual(const T& left, const T& right);
-
-inline bool NearZero(const double value, const double epsilon)
-{
-    return NearEqual(value, 0.0, epsilon);
-}
-
-inline bool NearZero(const double left)
-{
-    constexpr double epsilon = 0.001f;
-    return NearZero(left, epsilon);
+inline uint32_t StringToUint(const std::string &value, uint32_t defaultErr = 0) {
+    errno = 0;
+    char *pEnd = nullptr;
+    uint64_t result = std::strtoull(value.c_str(), &pEnd, 10);
+    if (pEnd == value.c_str() || result > UINT32_MAX || errno == ERANGE) {
+        return defaultErr;
+    } else {
+        return result;
+    }
 }
 
 } // namespace fastimage

@@ -3,8 +3,6 @@
 #include <regex>
 #include "Color.h"
 #include "Utils.h"
-#include "StringUtils.h"
-#include "LinearMap.h"
 
 namespace rnoh {
 namespace fastimage {
@@ -97,17 +95,16 @@ Color Color::FromString(std::string colorStr, uint32_t maskAlpha, Color defaultC
         }
     }
     // match for special string
-    static const LinearMapNode<Color> colorTable[] = {
-        {"black", Color(0xff000000)}, {"blue", Color(0xff0000ff)}, {"gray", Color(0xffc0c0c0)},
-        {"green", Color(0xff00ff00)}, {"red", Color(0xffff0000)},  {"white", Color(0xffffffff)},
-    };
-    int64_t colorIndex = BinarySearchFindIndex(colorTable, ArraySize(colorTable), colorStr.c_str());
-    if (colorIndex != -1) {
-        return colorTable[colorIndex].value;
-    }
+    vector<pair<string, Color>> colorTable = {{"black", Color(0xff000000)}, {"blue", Color(0xff0000ff)},
+                                              {"gray", Color(0xffc0c0c0)},  {"green", Color(0xff00ff00)},
+                                              {"red", Color(0xffff0000)},   {"white", Color(0xffffffff)}};
+    int64_t colorIndex = BinarySearch(colorTable, colorStr.c_str());
+     if (colorIndex != -1) {
+        return colorTable[colorIndex].second;
+     }
 
     // parse uint32_t color string.
-    auto uint32Color = StringUtils::StringToUint(colorStr);
+    auto uint32Color = StringToUint(colorStr);
     if (uint32Color > 0) {
         Color value;
         if (uint32Color >> COLOR_ALPHA_OFFSET == 0) {
@@ -147,98 +144,6 @@ Color Color::FromRGB(uint8_t red, uint8_t green, uint8_t blue)
 Color Color::ChangeAlpha(uint8_t alpha) const
 {
     return Color::FromARGB(alpha, GetRed(), GetGreen(), GetBlue());
-}
-
-Color Color::operator+(const Color& color) const
-{
-    // convert first color from ARGB to linear
-    double firstLinearRed = 0.0;
-    double firstLinearGreen = 0.0;
-    double firstLinearBlue = 0.0;
-    ConvertGammaToLinear(*this, firstLinearRed, firstLinearGreen, firstLinearBlue);
-
-    // convert second color from ARGB to linear
-    double secondLinearRed = 0.0;
-    double secondLinearGreen = 0.0;
-    double secondLinearBlue = 0.0;
-    ConvertGammaToLinear(color, secondLinearRed, secondLinearGreen, secondLinearBlue);
-
-    // get linear result and convert to gamma
-    return ConvertLinearToGamma(GetAlpha() + color.GetAlpha(), firstLinearRed + secondLinearRed,
-        firstLinearGreen + secondLinearGreen, firstLinearBlue + secondLinearBlue);
-}
-
-Color Color::operator-(const Color& color) const
-{
-    // convert first color from ARGB to linear
-    double firstLinearRed = 0.0;
-    double firstLinearGreen = 0.0;
-    double firstLinearBlue = 0.0;
-    ConvertGammaToLinear(*this, firstLinearRed, firstLinearGreen, firstLinearBlue);
-
-    // convert second color from ARGB to linear
-    double secondLinearRed = 0.0;
-    double secondLinearGreen = 0.0;
-    double secondLinearBlue = 0.0;
-    ConvertGammaToLinear(color, secondLinearRed, secondLinearGreen, secondLinearBlue);
-
-    // get linear result and convert to gamma
-    return ConvertLinearToGamma(GetAlpha() - color.GetAlpha(), firstLinearRed - secondLinearRed,
-        firstLinearGreen - secondLinearGreen, firstLinearBlue - secondLinearBlue);
-}
-
-Color Color::operator*(double value) const
-{
-    // convert color from ARGB to linear
-    double linearRed = 0.0;
-    double linearGreen = 0.0;
-    double linearBlue = 0.0;
-    ConvertGammaToLinear(*this, linearRed, linearGreen, linearBlue);
-
-    // get linear result and convert to gamma
-    return ConvertLinearToGamma(GetAlpha() * value, linearRed * value, linearGreen * value, linearBlue * value);
-}
-
-Color Color::operator/(double value) const
-{
-    if (NearZero(value)) {
-        return *this;
-    }
-    // convert color from ARGB to linear
-    double linearRed = 0.0;
-    double linearGreen = 0.0;
-    double LinearBlue = 0.0;
-    ConvertGammaToLinear(*this, linearRed, linearGreen, LinearBlue);
-
-    // get linear result and convert to gamma
-    return ConvertLinearToGamma(GetAlpha() / value, linearRed / value, linearGreen / value, LinearBlue / value);
-}
-
-double Color::ConvertGammaToLinear(uint8_t value)
-{
-    return std::pow(value, GAMMA_FACTOR);
-}
-
-uint8_t Color::ConvertLinearToGamma(double value)
-{
-    return std::clamp(static_cast<int32_t>(round(std::pow(value, 1.0 / GAMMA_FACTOR))), 0, UINT8_MAX);
-}
-
-void Color::ConvertGammaToLinear(const Color& gammaColor, double& linearRed, double& linearGreen, double& linearBlue)
-{
-    linearRed = ConvertGammaToLinear(gammaColor.GetRed());
-    linearGreen = ConvertGammaToLinear(gammaColor.GetGreen());
-    linearBlue = ConvertGammaToLinear(gammaColor.GetBlue());
-}
-
-Color Color::ConvertLinearToGamma(double alpha, double linearRed, double linearGreen, double linearBlue)
-{
-    uint8_t gammaRed = ConvertLinearToGamma(linearRed);
-    uint8_t gammaGreen = ConvertLinearToGamma(linearGreen);
-    uint8_t gammaBlue = ConvertLinearToGamma(linearBlue);
-    uint8_t gammaAlpha = std::clamp(static_cast<int32_t>(round(alpha)), 0, UINT8_MAX);
-
-    return FromARGB(gammaAlpha, gammaRed, gammaGreen, gammaBlue);
 }
 
 } // namespace fastimage
