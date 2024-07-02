@@ -16,6 +16,7 @@ private:
     std::string FindLocalCacheByUri(std::string const &uri);
     std::string getBundlePath();
     std::string getAbsolutePathPrefix(std::string const &bundlePath);
+    std::optional<std::string> getTintColorFromDynamic(folly::dynamic value);
 
 public:
     FastImageViewComponentInstance(Context context);

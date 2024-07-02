@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <react/renderer/core/ConcreteState.h>
 #include <sstream>
+#include "utils/Color.h"
 
 namespace rnoh {
 
@@ -68,6 +69,11 @@ std::string FastImageViewComponentInstance::getAbsolutePathPrefix(std::string co
     return prefix;
 }
 
+std::optional<std::string> FastImageViewComponentInstance::getTintColorFromDynamic(folly::dynamic value) {
+    auto rawPropsColor = (value.count("tintColor") > 0) ? std::optional(value["tintColor"].asString()) : std::nullopt;
+    return rawPropsColor;
+}
+
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
     DLOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
@@ -103,8 +109,13 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
         }
     }
 
-    if (!m_props || m_props->tintColor != props->tintColor) {
-        this->getLocalRootArkUINode().setTintColor(props->tintColor);
+    if (props->rawProps != nullptr) {
+        auto tintColor = getTintColorFromDynamic(props->rawProps);
+        if (tintColor.has_value()) {
+            auto tintColorValue = fastimage::Color::FromString(tintColor.value()).GetValue();
+            DLOG(INFO) << "[FastImage] rawProps->tinColor: " << tintColor.value() << " tintColorValue: " << tintColorValue;
+            this->getLocalRootArkUINode().setTintColor(SharedColor(tintColorValue));
+        }
     }
 }
 
