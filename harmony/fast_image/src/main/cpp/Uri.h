@@ -5,7 +5,6 @@
 #include <folly/String.h>
 
 namespace rnoh {
-
 /**
  * Class representing a URI.
  *
@@ -87,11 +86,11 @@ class Uri {
    */
   const std::vector<std::pair<std::string, std::string>>& getQueryParams();
     
-  bool isAllowedEncode(char c, const std::string &allow) { return allow.find(c) != std::string::npos; }
+  bool isAllowedEncode(char c, const std::string &allow);
   std::string uriEncode(const std::string &s, const std::string &allow);
   std::string& getEncodeUri(){ return encodeUri_; };
 
- private:
+  private:
   std::string scheme_;
   std::string username_;
   std::string password_;

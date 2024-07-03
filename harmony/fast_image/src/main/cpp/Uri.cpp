@@ -150,15 +150,20 @@ const std::vector<std::pair<std::string, std::string>>& Uri::getQueryParams() {
   return queryParams_;
 }
 
+bool Uri::isAllowedEncode(char c, const std::string &allow) {
+  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+         std::string("_-!.~'()*").find(c) != std::string::npos || (!allow.empty() && allow.find(c) != std::string::npos);
+}
 
 std::string Uri::uriEncode(const std::string &s, const std::string &allow) {
     if (s.empty()) {
         return s;
     }
+    char HEX_DIGITS[] = "0123456789ABCDEF";
     std::ostringstream encoded;
     size_t oldLength = s.length();
     size_t current = 0;
-
+    
     while (current < oldLength) {
         size_t nextToEncode = current;
         while (nextToEncode < oldLength && isAllowedEncode(s[nextToEncode], allow)) {
@@ -181,9 +186,15 @@ std::string Uri::uriEncode(const std::string &s, const std::string &allow) {
             nextAllowed++;
         }
         std::string toEncode = s.substr(current, nextAllowed - current);
-        for (char c : toEncode) {
-            encoded << '%' << std::uppercase << std::hex << std::setw(2) << std::setfill('0')
-                    << static_cast<int>(static_cast<unsigned char>(c));
+        try {
+            // Convert string to bytes using the specified encoding (assuming ASCII here)
+            for (char c : toEncode) {
+                encoded << '%' << HEX_DIGITS[(c & 0xf0) >> 4] << HEX_DIGITS[c & 0xf];
+            }
+        } catch (const std::exception &e) {
+            // Handle encoding exceptions
+            std::cerr << "Encoding error: " << e.what() << std::endl;
+            return s;
         }
 
         current = nextAllowed;
