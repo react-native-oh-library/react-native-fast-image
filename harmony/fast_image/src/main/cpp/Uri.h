@@ -85,12 +85,13 @@ class Uri {
    *          one is parameter value
    */
   const std::vector<std::pair<std::string, std::string>>& getQueryParams();
-    
+  bool isAlphaNumeric(char c);
+  bool isReserved(char c);
   bool isAllowedEncode(char c, const std::string &allow);
   std::string uriEncode(const std::string &s, const std::string &allow);
   std::string& getEncodeUri(){ return encodeUri_; };
 
-  private:
+ private:
   std::string scheme_;
   std::string username_;
   std::string password_;

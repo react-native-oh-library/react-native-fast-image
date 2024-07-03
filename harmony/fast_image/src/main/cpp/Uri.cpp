@@ -151,9 +151,12 @@ const std::vector<std::pair<std::string, std::string>>& Uri::getQueryParams() {
   return queryParams_;
 }
 
+bool Uri::isAlphaNumeric(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'); }
+
+bool Uri::isReserved(char c) { return std::string("_-!.~'()*").find(c) != std::string::npos; }
+
 bool Uri::isAllowedEncode(char c, const std::string &allow) {
-  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
-         std::string("_-!.~'()*").find(c) != std::string::npos || (!allow.empty() && allow.find(c) != std::string::npos);
+  return isAlphaNumeric(c) || isReserved(c) || (!allow.empty() && allow.find(c) != std::string::npos);
 }
 
 std::string Uri::uriEncode(const std::string &s, const std::string &allow) {
