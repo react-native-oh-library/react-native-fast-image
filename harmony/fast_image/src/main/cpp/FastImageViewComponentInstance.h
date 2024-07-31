@@ -12,6 +12,8 @@ class FastImageViewComponentInstance : public CppComponentInstance<facebook::rea
 private:
     FastImageNode m_imageNode;
     std::string m_uri;
+    bool m_isReload = false;
+    facebook::react::FastImageViewSourceStruct m_source;
     // used for find local cache of uri, if not find return uri
     std::string FindLocalCacheByUri(std::string const &uri);
     std::string getBundlePath();
