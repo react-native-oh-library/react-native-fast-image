@@ -58,6 +58,7 @@ void FastImageNode::onNodeEvent(
 }
 
 FastImageNode& FastImageNode::setSources(std::string const& uri, std::string prefix) {
+  DLOG(INFO) << "[FastImage] setSources: " << uri;
   ArkUI_AttributeItem item;
   std::string absolutePath = prefix == "" ? RAWFILE_PREFIX : prefix;
   if (uri.rfind(ASSET_PREFIX, 0) == 0) {

@@ -23,26 +23,30 @@
  */
 
 import { TurboModule } from '@rnoh/react-native-openharmony/ts';
+import { FastImageLoaderTurboModule } from './FastImageLoaderTurboModule';
 import Logger from './Logger'
 import { RNCFastImageView } from "./TMSpecs"
 
 
 export class RNCFastImageViewTurboModule extends TurboModule implements RNCFastImageView.Spec {
-  preload(sources: RNCFastImageView.Source[]) {
-    Logger.debug('[RNOH]:RNCFastImageViewTurboModule call preload', JSON.stringify(sources));
-  }
+
 
   clearMemoryCache(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      Logger.debug('[RNOH]:RNCFastImageViewTurboModule call clearMemoryCache');
-      resolve()
-    });
+    let imageLoaderTurboModule:FastImageLoaderTurboModule = this.ctx.rnInstance.getTurboModule("FastImageLoader");
+    return imageLoaderTurboModule.memoryCacheClear();
   }
 
   clearDiskCache(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      Logger.debug('[RNOH]:RNCFastImageViewTurboModule call clearDiskCache');
-      resolve()
+      let imageLoaderTurboModule:FastImageLoaderTurboModule = this.ctx.rnInstance.getTurboModule("FastImageLoader");
+      try{
+        imageLoaderTurboModule.diskCacheClear();
+      } catch (e) {
+        Logger.error("clearDiskCache BusinessError code:"+e.code)
+        reject("clearDiskCache BusinessError code:"+e.code)
+      }
+
+      resolve(null)
     });
   }
 }

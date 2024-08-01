@@ -1,0 +1,164 @@
+#pragma once
+
+#include "RNOH/ArkTSTurboModule.h"
+#include <ReactCommon/RuntimeExecutor.h>
+#include <react/renderer/imagemanager/primitives.h>
+#include "FastImageLoaderTurboModule.h"
+#include "RNOH/ArkTSMessageHub.h"
+#include "RNOH/Assert.h"
+#include "RNOH/RNInstance.h"
+#include "RNOH/TaskExecutor/TaskExecutor.h"
+
+constexpr char FAST_IMAGE_SOURCE_PENDING[] = "FAST_IMAGE_SOURCE_PENDING";
+
+namespace rnoh {
+
+class JSI_EXPORT FastImageLoaderTurboModule : public ArkTSTurboModule {
+public:
+    using Shared = std::shared_ptr<FastImageLoaderTurboModule>;
+
+    FastImageLoaderTurboModule(const ArkTSTurboModule::Context ctx, const std::string name);
+
+    class FastImageSourceResolver : public ArkTSMessageHub::Observer {
+    public:
+        using Shared = std::shared_ptr<FastImageSourceResolver>;
+
+        FastImageSourceResolver(ArkTSMessageHub::Shared const &subject, RNInstance::Weak rnInstance)
+            : ArkTSMessageHub::Observer(subject), m_rnInstance(rnInstance) {}
+
+        class ImageSourceUpdateListener {
+        public:
+            std::string observedUri;
+
+            ImageSourceUpdateListener(FastImageSourceResolver::Shared const &FastImageSourceResolver)
+                : m_FastImageSourceResolver(FastImageSourceResolver){};
+
+            ~ImageSourceUpdateListener() { m_FastImageSourceResolver->removeListener(this); }
+
+            virtual void onImageSourceCacheUpdate() = 0;
+
+        private:
+            FastImageSourceResolver::Shared const &m_FastImageSourceResolver;
+        };
+
+        std::string resolveImageSources(ImageSourceUpdateListener &listener, std::string uri) {
+            assertMainThread();
+            // Subscribe to get information about prefetched URIs.
+            if (uriListenersMap.find(uri) == uriListenersMap.end()) {
+                removeListener(&listener);
+                addListenerForURI(uri, &listener);
+            }
+
+            if (auto it = remoteImageSourceMap.find(uri);
+                it == remoteImageSourceMap.end() || it->second == FAST_IMAGE_SOURCE_PENDING) {
+                auto resolvedFileUri = getPrefetchedImageFileUri(uri);
+                if (!resolvedFileUri.empty()) {
+                    remoteImageSourceMap.emplace(uri, resolvedFileUri);
+                }
+            }
+
+            if (auto it = remoteImageSourceMap.find(uri); it != remoteImageSourceMap.end()) {
+                if (it->second == FAST_IMAGE_SOURCE_PENDING) {
+                    return uri;
+                }
+                uri = it->second;
+            }
+        
+            return uri;
+        }
+
+        void addListenerForURI(const std::string &uri, ImageSourceUpdateListener *listener) {
+            assertMainThread();
+            listener->observedUri = uri;
+            auto it = uriListenersMap.find(uri);
+            if (it == uriListenersMap.end()) {
+                uriListenersMap.emplace(uri, std::initializer_list<ImageSourceUpdateListener *>{listener});
+                return;
+            }
+            if (std::find(it->second.begin(), it->second.end(), listener) != it->second.end()) {
+                return;
+            }
+            it->second.push_back(listener);
+        }
+
+        void removeListenerForURI(const std::string &uri, ImageSourceUpdateListener *listener) {
+            assertMainThread();
+            auto it = uriListenersMap.find(uri);
+            if (it == uriListenersMap.end()) {
+                return;
+            }
+            auto &listeners = it->second;
+            auto listenerPos = std::find(listeners.begin(), listeners.end(), listener);
+            if (listenerPos != listeners.end()) {
+                listeners.erase(listenerPos);
+                if (listeners.empty()) {
+                    uriListenersMap.erase(uri);
+                }
+            }
+        }
+
+        void removeListener(ImageSourceUpdateListener *listener) {
+            removeListenerForURI(listener->observedUri, listener);
+        }
+
+    protected:
+        virtual void onMessageReceived(const ArkTSMessage &message) override {
+            if (message.name == "UPDATE_FAST_IMAGE_SOURCE_MAP") {
+                assertMainThread();
+                
+                auto remoteUri = message.payload["remoteUri"].asString();
+                auto fileUri = message.payload["fileUri"].asString();
+                auto it = uriListenersMap.find(remoteUri);
+                if (it == uriListenersMap.end()) {
+                    return;
+                }
+                auto &listeners = it->second;
+                remoteImageSourceMap.insert_or_assign(remoteUri, fileUri);
+                for (auto listener : listeners) {
+                    listener->onImageSourceCacheUpdate();
+                    removeListenerForURI(remoteUri, listener);
+                }
+            }
+        }
+
+    private:
+        std::unordered_map<std::string, std::vector<ImageSourceUpdateListener *>> uriListenersMap;
+        std::unordered_map<std::string, std::string> remoteImageSourceMap;
+        std::thread::id m_mainThreadId = std::this_thread::get_id();
+        std::weak_ptr<RNInstance> m_rnInstance;
+
+        void assertMainThread() {
+            RNOH_ASSERT_MSG(m_mainThreadId == std::this_thread::get_id(),
+                            "FastImageSourceResolver must only be accessed on the main thread");
+        }
+
+        std::string getPrefetchedImageFileUri(std::string uri) {
+            auto rnInstance = m_rnInstance.lock();
+            if (rnInstance == nullptr) {
+                return {};
+            }
+            auto imageLoaderTurboModule = rnInstance->getTurboModule<FastImageLoaderTurboModule>("FastImageLoader");
+            if (imageLoaderTurboModule != nullptr) {
+                auto prefetchResult = imageLoaderTurboModule->callSync("getPrefetchResult", {uri});
+                if (prefetchResult == "pending") {
+                    // The uri will be updated in onMessageReceived method.
+                    return FAST_IMAGE_SOURCE_PENDING;
+                }
+                if (prefetchResult != nullptr) {
+                    return prefetchResult.asString();
+                }else{
+                    imageLoaderTurboModule->callSync("prefetchImage", {uri});
+                }
+                
+            }
+            return {};
+        }
+    };
+
+    std::shared_ptr<FastImageSourceResolver> m_FastImageSourceResolver = nullptr;
+
+private:
+
+};
+
+} // namespace rnoh

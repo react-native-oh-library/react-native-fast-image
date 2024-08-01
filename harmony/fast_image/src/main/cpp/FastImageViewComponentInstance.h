@@ -2,17 +2,22 @@
 
 #include "EventEmitters.h"
 #include "FastImageNode.h"
+#include "FastImageLoaderTurboModule.h"
 #include "ShadowNodes.h"
 #include "RNOH/CppComponentInstance.h"
 #include "RNOH/arkui/ImageNode.h"
 
 namespace rnoh {
 class FastImageViewComponentInstance : public CppComponentInstance<facebook::react::FastImageViewShadowNode>,
-                                       public FastImageNodeDelegate {
+                                       public FastImageNodeDelegate,
+                                       public FastImageLoaderTurboModule::FastImageSourceResolver::ImageSourceUpdateListener {
 private:
     FastImageNode m_imageNode;
     std::string m_uri;
     // used for find local cache of uri, if not find return uri
+    
+    bool m_isReload = false;
+    facebook::react::FastImageViewSourceStruct m_source;
     std::string FindLocalCacheByUri(std::string const &uri);
     std::string getBundlePath();
     std::string getAbsolutePathPrefix(std::string const &bundlePath);
@@ -30,5 +35,8 @@ public:
     facebook::react::ImageResizeMode convertToImageResizeMode(facebook::react::FastImageViewResizeMode mode);
 
     FastImageNode &getLocalRootArkUINode() override;
+    
+    // ImageSourceResolver::ImageSourceUpdateListener
+    void onImageSourceCacheUpdate() override;
 };
 } // namespace rnoh

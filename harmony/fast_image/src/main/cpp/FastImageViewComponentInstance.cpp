@@ -1,9 +1,11 @@
 #include "FastImageViewComponentInstance.h"
 #include "FastImageSource.h"
+#include "FastImageLoaderTurboModule.h"
 #include "Props.h"
 #include <iomanip>
 #include <react/renderer/core/ConcreteState.h>
 #include <sstream>
+#include <filemanagement/fileio/oh_fileio.h>
 
 namespace rnoh {
 
@@ -11,7 +13,9 @@ const std::string BUNDLE_HARMONY_JS = "bundle.harmony.js";
 const std::string RAWFILE_PREFIX = "resource://RAWFILE/assets/";
 
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
-    : CppComponentInstance(std::move(context)) {
+    : CppComponentInstance(std::move(context)),
+      FastImageLoaderTurboModule::FastImageSourceResolver::ImageSourceUpdateListener(
+          (std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(m_deps->rnInstance.lock()->getTurboModule("FastImageLoader")))->m_FastImageSourceResolver) {
     this->getLocalRootArkUINode().setNodeDelegate(this);
     this->getLocalRootArkUINode().setInterpolation(ARKUI_IMAGE_INTERPOLATION_HIGH);
     this->getLocalRootArkUINode().setDraggable(false);
@@ -26,18 +30,17 @@ std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string cons
         return uri;
     }
 
-    auto turboModule = rnInstance->getTurboModule("ImageLoader");
+    auto turboModule = rnInstance->getTurboModule("FastImageLoader");
     if (!turboModule) {
         return uri;
     }
 
-    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::ArkTSTurboModule>(turboModule);
+    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(turboModule);
     if (!arkTsTurboModule) {
         return uri;
     }
 
-    auto cache = arkTsTurboModule->callSync("getCacheFilePath", {uri});
-    return cache.asString();
+    return arkTsTurboModule->m_FastImageSourceResolver->resolveImageSources(*this,uri);
 }
 
 std::string FastImageViewComponentInstance::getBundlePath() {
@@ -83,11 +86,21 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     }
 
     if (!m_props || m_props->source.uri != props->source.uri) {
+        this->m_isReload = false;
+        this->m_source = props->source;
         m_uri = props->source.uri;
-        FastImageSource fastImageSource(props->source);
-        std::string uri = fastImageSource.getUri();
-        //std::string uri = FindLocalCacheByUri(m_uri);
-        this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+        std::string uri = FindLocalCacheByUri(m_uri);
+        
+        char charArr[uri.size() + 1];
+        strcpy(charArr, uri.c_str()); 
+        FileIO_FileLocation location;
+        FileManagement_ErrCode ret = OH_FileIO_GetFileLocation(charArr, strlen(charArr), &location);
+        
+        if(ret == 0){
+            this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+        } else  {
+            this->getLocalRootArkUINode().setSources(m_uri, getAbsolutePathPrefix(getBundlePath()));
+        }
         if (!m_uri.empty()) {
             onLoadStart();
         }
@@ -106,6 +119,10 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     if (!m_props || m_props->tintColor != props->tintColor) {
         this->getLocalRootArkUINode().setTintColor(props->tintColor);
     }
+}
+
+void FastImageViewComponentInstance::onImageSourceCacheUpdate() {
+    this->getLocalRootArkUINode().setSources(m_uri, getAbsolutePathPrefix(getBundlePath()));
 }
 
 // void FastImageViewComponentInstance::onStateChanged(SharedConcreteState const& state) {
@@ -132,6 +149,13 @@ void FastImageViewComponentInstance::onComplete(float width, float height) {
 }
 
 void FastImageViewComponentInstance::onError(int32_t errorCode) {
+    if (!m_isReload) {
+        FastImageSource fastImageSource(m_source);
+        std::string uri = fastImageSource.getUri();
+        this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+        m_isReload = true;
+        return;
+    }
     if (m_eventEmitter == nullptr) {
         return;
     }

@@ -23,29 +23,43 @@
  * SOFTWARE.
  */
 
-import { RNPackage, TurboModulesFactory } from '@rnoh/react-native-openharmony/ts';
+import { RNPackage, TurboModulesFactory,
+  WorkerTurboModule,
+  WorkerTurboModuleContext,
+  WorkerTurboModuleFactory } from '@rnoh/react-native-openharmony/ts';
 import type {
   TurboModule,
   TurboModuleContext,
   DescriptorWrapperFactoryByDescriptorTypeCtx,
   DescriptorWrapperFactoryByDescriptorType,
 } from '@rnoh/react-native-openharmony/ts';
-import {RNCFastImageViewTurboModule} from './RNCFastImageViewTurboModule';
+import { RNCFastImageViewTurboModule } from './RNCFastImageViewTurboModule';
 import app from '@system.app'
 import {RNCFastImageView} from './TMSpecs'
 import {FastImageView} from './RNCSpecs'
+import {FastImageLoaderTurboModule} from './FastImageLoaderTurboModule'
+
+
 class FastImageTurboModulesFactory extends TurboModulesFactory {
   createTurboModule(name: string): TurboModule | null {
     if (name === RNCFastImageView.NAME) {
       return new RNCFastImageViewTurboModule(this.ctx);
+    } else if(name === FastImageLoaderTurboModule.NAME){
+      return new FastImageLoaderTurboModule(this.ctx);
     }
     return null;
   }
 
   hasTurboModule(name: string): boolean {
-    return name === RNCFastImageView.NAME;
+    if(name === RNCFastImageView.NAME){
+      return true;
+    }else if(name === FastImageLoaderTurboModule.NAME){
+      return true;
+    }
+    return false;
   }
 }
+
 
 export class FastImagePackage extends RNPackage {
   createTurboModulesFactory(ctx: TurboModuleContext): TurboModulesFactory {
