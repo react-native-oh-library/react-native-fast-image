@@ -83,11 +83,11 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     }
 
     if (!m_props || m_props->source.uri != props->source.uri) {
+        this->m_isReload = false;
+        this->m_source = props->source;
         m_uri = props->source.uri;
-        FastImageSource fastImageSource(props->source);
-        std::string uri = fastImageSource.getUri();
         //std::string uri = FindLocalCacheByUri(m_uri);
-        this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+        this->getLocalRootArkUINode().setSources(m_uri, getAbsolutePathPrefix(getBundlePath()));
         if (!m_uri.empty()) {
             onLoadStart();
         }
@@ -132,6 +132,13 @@ void FastImageViewComponentInstance::onComplete(float width, float height) {
 }
 
 void FastImageViewComponentInstance::onError(int32_t errorCode) {
+    if (!m_isReload) {
+        FastImageSource fastImageSource(m_source);
+        std::string uri = fastImageSource.getUri();
+        this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+        m_isReload = true;
+        return;
+    }
     if (m_eventEmitter == nullptr) {
         return;
     }
