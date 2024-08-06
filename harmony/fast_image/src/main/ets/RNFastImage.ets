@@ -147,7 +147,7 @@ export struct RNFastImage {
       return;
     }
     const skipImageLoader = true && !this.ctx.rnInstance.isFeatureFlagEnabled("IMAGE_LOADER");
-    const imageLoader = this.ctx.rnInstance.getTurboModule<ImageLoaderTurboModule>("ImageLoader");
+    const imageLoader = this.ctx.rnInstance.getTurboModule<ImageLoaderTurboModule>("FastImageLoader");
     const queryCacheResult = await imageLoader.queryCache([uri]) as Record<string, string>;
     const isNotCached = !queryCacheResult[uri];
     if (skipImageLoader && isNotCached) {

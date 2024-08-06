@@ -33,12 +33,16 @@
 
 #include <ReactCommon/TurboModule.h>
 #include "RNOH/ArkTSTurboModule.h"
+#include "RNOH/RNInstance.h"
 
 namespace rnoh {
 
 class JSI_EXPORT RNCFastImageViewTurboModule : public ArkTSTurboModule {
 public:
     RNCFastImageViewTurboModule(const ArkTSTurboModule::Context ctx, const std::string name);
+
+    void preload(facebook::jsi::Runtime &rt,const facebook::jsi::Value *args, size_t count);
+
 };
 
 } // namespace rnoh

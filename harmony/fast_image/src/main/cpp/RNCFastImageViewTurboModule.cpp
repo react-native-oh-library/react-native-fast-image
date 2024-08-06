@@ -30,13 +30,35 @@
  */
 
 #include "RNCFastImageViewTurboModule.h"
+#include "RNOH/ArkTSTurboModule.h"
+#include "RNOH/RNInstance.h"
 
 using namespace rnoh;
 using namespace facebook;
 
 static jsi::Value hostFunction_RNCFastImageViewTurboModule_preload(jsi::Runtime &rt, react::TurboModule &turboModule,
-                                                                   const jsi::Value *args, size_t count) {
-    return static_cast<ArkTSTurboModule &>(turboModule).call(rt, "preload", args, count);
+                                                                   const jsi::Value *args, size_t count)
+{
+    auto self = static_cast<RNCFastImageViewTurboModule *>(&turboModule);
+    self->preload(rt,args,count);
+    return jsi::Value::null();
+}
+void RNCFastImageViewTurboModule::preload(facebook::jsi::Runtime &rt,const facebook::jsi::Value *args, size_t count)
+{
+    auto rnInstance = m_ctx.instance.lock();
+    auto turboModule = rnInstance->getTurboModule("FastImageLoader");
+    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::ArkTSTurboModule>(turboModule);
+    facebook::jsi::Array sources = args[0].asObject(rt).asArray(rt);
+    
+    for (int i = 0; i < sources.size(rt); i++) {
+        auto source = sources.getValueAtIndex(rt, i).getObject(rt);
+        std::string uri;
+        if(source.hasProperty(rt, "uri")){
+            uri = source.getProperty(rt, "uri").getString(rt).utf8(rt);
+            arkTsTurboModule->callSync("prefetchImage",{uri});
+        }
+    }
+    return;
 }
 
 static jsi::Value hostFunction_RNCFastImageViewTurboModule_clearMemoryCache(jsi::Runtime &rt,
