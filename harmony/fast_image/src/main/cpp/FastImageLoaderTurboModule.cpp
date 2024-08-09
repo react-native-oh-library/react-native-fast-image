@@ -1,5 +1,6 @@
 #include "FastImageLoaderTurboModule.h"
 #include "RNOH/ArkTSTurboModule.h"
+#include "RNOH/RNInstanceCAPI.h"
 
 using namespace rnoh;
 using namespace facebook;
@@ -17,21 +18,14 @@ rnoh::FastImageLoaderTurboModule::FastImageLoaderTurboModule(
       ARK_ASYNC_METHOD_METADATA(prefetchImageWithMetadata, 3),
       ARK_ASYNC_METHOD_METADATA(queryCache, 1)};
     
-    m_ctx.taskExecutor->runTask(
-      TaskThread::MAIN, [weakInstance = m_ctx] {
-        auto instance = weakInstance.instance.lock();
-        if (!instance) {
-          return;
-        }
-        auto self = instance->getTurboModule<FastImageLoaderTurboModule>("FastImageLoader");
-        if (!self) {
-          return;
-        }
-        if (self->m_FastImageSourceResolver) {
-          return;
-        }
-        
-        self->m_FastImageSourceResolver = std::make_shared<FastImageSourceResolver>(
-            weakInstance.arkTSMessageHub, instance);
-    });
+    if(m_FastImageSourceResolver){
+        return;
+    }
+
+    if(auto instance = m_ctx.instance.lock(); instance != nullptr){
+        m_FastImageSourceResolver = std::make_shared<FastImageSourceResolver>(instance);
+        auto rnInstance = dynamic_cast<RNInstanceCAPI*>(instance.get());
+        rnInstance->addArkTSMessageHandler(m_FastImageSourceResolver);
+    }
+    
 }
