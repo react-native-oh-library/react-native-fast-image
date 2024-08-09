@@ -19,12 +19,12 @@ public:
 
     FastImageLoaderTurboModule(const ArkTSTurboModule::Context ctx, const std::string name);
 
-    class FastImageSourceResolver : public ArkTSMessageHub::Observer {
+    class FastImageSourceResolver :  public ArkTSMessageHandler {
     public:
         using Shared = std::shared_ptr<FastImageSourceResolver>;
 
-        FastImageSourceResolver(ArkTSMessageHub::Shared const &subject, RNInstance::Weak rnInstance)
-            : ArkTSMessageHub::Observer(subject), m_rnInstance(rnInstance) {}
+        FastImageSourceResolver(std::weak_ptr<RNInstance> rnInstance)
+            : m_rnInstance(rnInstance) {}
 
         class ImageSourceUpdateListener {
         public:
@@ -103,10 +103,10 @@ public:
         }
 
     protected:
-        virtual void onMessageReceived(const ArkTSMessage &message) override {
-            if (message.name == "UPDATE_FAST_IMAGE_SOURCE_MAP") {
-                auto remoteUri = message.payload["remoteUri"].asString();
-                auto fileUri = message.payload["fileUri"].asString();
+        virtual void handleArkTSMessage(const Context& ctx) override {
+            if (ctx.messageName == "UPDATE_FAST_IMAGE_SOURCE_MAP") {
+                auto remoteUri = ctx.messagePayload["remoteUri"].asString();
+                auto fileUri = ctx.messagePayload["fileUri"].asString();
                 auto it = uriListenersMap.find(remoteUri);
                 if (it == uriListenersMap.end()) {
                     return;
