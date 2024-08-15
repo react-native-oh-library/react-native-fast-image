@@ -160,6 +160,14 @@ FastImageNode& FastImageNode::setFocusable(bool focusable) {
   return *this;
 }
 
+FastImageNode& FastImageNode::setAutoResize(bool autoResize) {
+  ArkUI_NumberValue value[] = {{.i32 = static_cast<int32_t>(autoResize)}};
+  ArkUI_AttributeItem item = {value, sizeof(value) / sizeof(ArkUI_NumberValue)};
+  maybeThrow(NativeNodeApi::getInstance()->setAttribute(
+      m_nodeHandle, NODE_IMAGE_AUTO_RESIZE, &item));
+  return *this;
+}
+
 FastImageNode& FastImageNode::setResizeMethod(std::string const& resizeMethod) {
   auto autoResize = (resizeMethod != "scale") ? 1 : 0;
   ArkUI_NumberValue value[] = {{.i32 = autoResize}};

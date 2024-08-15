@@ -40,6 +40,7 @@ class FastImageNode : public ArkUINode {
 
   FastImageNode& resetFocusable();
   FastImageNode& resetResizeMethod();
+  FastImageNode& setAutoResize(bool autoResize);
 
   void onNodeEvent(ArkUI_NodeEventType eventType, EventArgs& eventArgs)
       override;

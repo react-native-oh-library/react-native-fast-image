@@ -95,6 +95,7 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
         this->m_source = props->source;
         m_uri = props->source.uri;
         std::string uri = FindLocalCacheByUri(m_uri);
+        this->getLocalRootArkUINode().setAutoResize(true);
         this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
         
         if (!m_uri.empty()) {
