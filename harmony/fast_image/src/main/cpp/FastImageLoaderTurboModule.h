@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Props.h"
 #include "RNOH/ArkTSTurboModule.h"
 #include <ReactCommon/RuntimeExecutor.h>
 #include <react/renderer/imagemanager/primitives.h>
@@ -19,7 +20,7 @@ public:
 
     FastImageLoaderTurboModule(const ArkTSTurboModule::Context ctx, const std::string name);
 
-    class FastImageSourceResolver :  public ArkTSMessageHandler {
+    class FastImageSourceResolver : public ArkTSMessageHandler {
     public:
         using Shared = std::shared_ptr<FastImageSourceResolver>;
 
@@ -39,7 +40,8 @@ public:
                 }            
             }
 
-            virtual void onImageSourceCacheUpdate() = 0;
+            virtual void onImageSourceCacheUpdate(std::string fileUri) = 0;
+            virtual void onImageSourceCacheDownloadFileFail() = 0;
 
         private:
             FastImageSourceResolver::Shared const &m_FastImageSourceResolver;
@@ -62,7 +64,7 @@ public:
 
             if (auto it = remoteImageSourceMap.find(uri); it != remoteImageSourceMap.end()) {
                 if (it->second == FAST_IMAGE_SOURCE_PENDING) {
-                    return uri;
+                    return "";
                 }
                 uri = it->second;
             }
@@ -101,6 +103,10 @@ public:
         void removeListener(ImageSourceUpdateListener *listener) {
             removeListenerForURI(listener->observedUri, listener);
         }
+    
+        void clearRemoteImageSourceMap(){
+            remoteImageSourceMap.clear();
+        }
 
     protected:
         virtual void handleArkTSMessage(const Context& ctx) override {
@@ -114,7 +120,18 @@ public:
                 auto &listeners = it->second;
                 remoteImageSourceMap.insert_or_assign(remoteUri, fileUri);
                 for (auto listener : listeners) {
-                    listener->onImageSourceCacheUpdate();
+                    listener->onImageSourceCacheUpdate(fileUri);
+                    removeListenerForURI(remoteUri, listener);
+                }
+            } else if (ctx.messageName == "FAST_IMAGE_DOWNLOAD_FILE_FAIL") {
+                auto remoteUri = ctx.messagePayload["remoteUri"].asString();
+                auto it = uriListenersMap.find(remoteUri);
+                if (it == uriListenersMap.end()) {
+                    return;
+                }
+                auto &listeners = it->second;
+                for (auto listener : listeners) {
+                    listener->onImageSourceCacheDownloadFileFail();
                     removeListenerForURI(remoteUri, listener);
                 }
             }

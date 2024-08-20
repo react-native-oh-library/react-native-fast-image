@@ -7,7 +7,6 @@ import fs from '@ohos.file.fs';
 import { fetchDataFromUrl, FetchOptions, FetchResult } from '@rnoh/react-native-openharmony/src/main/ets/RNOH/HttpRequestHelper';
 import { RemoteImageSource } from './RemoteImageSource';
 import { common } from '@kit.AbilityKit';
-import { JSON } from '@kit.ArkTS';
 
 export class RemoteImageLoader {
   private activeRequestByUrl: Map<string, Promise<FetchResult>> = new Map();
@@ -17,7 +16,8 @@ export class RemoteImageLoader {
     private memoryCache: RemoteImageMemoryCache,
     private diskCache: RemoteImageDiskCache,
     private context: common.UIAbilityContext,
-    private onDiskCacheUpdate: (e: {remoteUri: string, fileUri: string}) => void,
+    private onDiskCacheUpdate: (e: { remoteUri: string, fileUri: string }) => void,
+    private onDownloadFileFail: (e: { remoteUri: string }) => void,
   ) {
   }
 
@@ -130,7 +130,7 @@ export class RemoteImageLoader {
     return true;
   }
 
-  public async prefetch(uri: string): Promise<boolean> {
+  public async prefetch(uri: string, headers?: object): Promise<boolean> {
     if (this.diskCache.has(uri)) {
       return true;
     }
@@ -144,13 +144,17 @@ export class RemoteImageLoader {
       this.memoryCache.remove(uri);
     }
 
-    const promise = this.downloadFile(uri);
+    const promise = this.downloadFile(uri, headers);
     this.activePrefetchByUrl.set(uri, promise);
+
+    promise.catch((e) => {
+      this.onDownloadFileFail({ remoteUri: uri });
+    })
 
     promise.finally(() => {
       this.activePrefetchByUrl.delete(uri);
       const fileUri = `file://${this.diskCache.getLocation(uri)}`;
-      this.onDiskCacheUpdate({remoteUri: uri, fileUri})
+      this.onDiskCacheUpdate({ remoteUri: uri, fileUri })
     });
 
     return await promise;
@@ -159,11 +163,13 @@ export class RemoteImageLoader {
   private async performDownload(config: request.DownloadConfig): Promise<boolean> {
     return await new Promise(async (resolve, reject) => {
       try {
+        if(config.header === undefined)
+          delete config.header
         const downloadTask = await request.downloadFile(this.context, config);
-        downloadTask.on("complete", () =>{
+        downloadTask.on("complete", () => {
           resolve(true);
         });
-        downloadTask.on("fail", (err: number) =>{
+        downloadTask.on("fail", (err: number) => {
           reject(`Failed to download the task. Code: ${err}`)
         });
       } catch (e) {
@@ -172,17 +178,17 @@ export class RemoteImageLoader {
     });
   }
 
-  private async downloadFile(uri: string): Promise<boolean> {
+  private async downloadFile(uri: string, headers?: object): Promise<boolean> {
     const path = this.diskCache.getLocation(uri);
     const tempPath = path + '_tmp';
 
     try {
       // Download to a temporary location to avoid risks of corrupted files from incomplete downloads, 
       // as request.downloadFile does not clean up failed downloads automatically.
-      if (fs.accessSync(tempPath)){
+      if (fs.accessSync(tempPath)) {
         await fs.unlink(tempPath);
       }
-      await this.performDownload({ url: uri, filePath: tempPath });
+      await this.performDownload({ url: uri, filePath: tempPath, header: headers });
       // Move the file to the final location and remove the temporary file
       await fs.moveFile(tempPath, path);
       this.diskCache.set(uri);
@@ -219,7 +225,7 @@ export class RemoteImageLoader {
     return undefined;
   }
 
-  public diskCacheClear():Promise<void> {
+  public diskCacheClear(): Promise<void> {
     try {
       this.diskCache.diskCacheClear();
     } catch (e) {
@@ -228,10 +234,10 @@ export class RemoteImageLoader {
     return Promise.resolve();
   }
 
-  public memoryCacheClear():Promise<void> {
-    if(this.memoryCache.memoryCacheClear()){
+  public memoryCacheClear(): Promise<void> {
+    if (this.memoryCache.memoryCacheClear()) {
       return Promise.resolve();
-    }else{
+    } else {
       return Promise.reject('[FastImage] memoryCacheClear fail');
     }
   }
