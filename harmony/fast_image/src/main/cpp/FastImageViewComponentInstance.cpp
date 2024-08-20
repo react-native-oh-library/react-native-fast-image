@@ -198,14 +198,17 @@ void FastImageViewComponentInstance::onError(int32_t errorCode) {
     if (!m_isReload) {
         FastImageSource fastImageSource(m_source);
         std::string uri = fastImageSource.getUri();
-        this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
         m_isReload = true;
-        return;
+        if (uri.compare(m_source.uri)) {
+            this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+            return;
+        }
     }
     if (m_eventEmitter == nullptr) {
         return;
     }
     m_eventEmitter->onFastImageError({});
+    m_eventEmitter->onFastImageLoadEnd({});
 }
 
 void FastImageViewComponentInstance::onLoadStart() {
