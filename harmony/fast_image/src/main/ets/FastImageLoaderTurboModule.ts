@@ -19,11 +19,12 @@ export class FastImageLoaderTurboModule extends TurboModule {
     this.imageLoader = new RemoteImageLoader(
       new RemoteImageMemoryCache(128), new RemoteImageDiskCache(128, ctx.uiAbilityContext.cacheDir), ctx.uiAbilityContext,
       ({ remoteUri, fileUri }) => {
-        ctx.rnInstance.postMessageToCpp('UPDATE_FAST_IMAGE_SOURCE_MAP', {
-          remoteUri,
-          fileUri,
-        });
-      })
+        ctx.rnInstance.postMessageToCpp('UPDATE_FAST_IMAGE_SOURCE_MAP', { remoteUri, fileUri });
+      },
+      ({ remoteUri }) => {
+        ctx.rnInstance.postMessageToCpp('FAST_IMAGE_DOWNLOAD_FILE_FAIL', { remoteUri });
+      },
+    )
   }
 
   public getConstants() {
@@ -60,8 +61,8 @@ export class FastImageLoaderTurboModule extends TurboModule {
     return Promise.resolve({ width: imageInfo.size.width, height: imageInfo.size.height })
   }
 
-  public async prefetchImage(uri: string): Promise<boolean> {
-    return this.imageLoader.prefetch(uri);
+  public async prefetchImage(uri: string, headers?: object): Promise<boolean> {
+    return this.imageLoader.prefetch(uri, headers);
   }
 
   public prefetchImageWithMetadata(uri: string, queryRootName: string, rootTag: number): Promise<boolean> {

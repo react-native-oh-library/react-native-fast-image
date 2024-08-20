@@ -102,6 +102,7 @@ FastImageNode& FastImageNode::setTintColor(
   }
 
   facebook::react::ColorComponents com = colorComponentsFromColor(sharedColor);
+    
   ArkUI_NumberValue value[] = {
       {.f32 = 0}, {.f32 = 0}, {.f32 = 0}, {.f32 = com.red},   {.f32 = 0},
       {.f32 = 0}, {.f32 = 0}, {.f32 = 0}, {.f32 = com.green}, {.f32 = 0},
@@ -221,6 +222,12 @@ FastImageNode& FastImageNode::resetFocusable() {
 FastImageNode& FastImageNode::resetResizeMethod() {
   maybeThrow(NativeNodeApi::getInstance()->resetAttribute(
       m_nodeHandle, NODE_IMAGE_AUTO_RESIZE));
+  return *this;
+}
+
+FastImageNode& FastImageNode::resetSources() {
+  maybeThrow(NativeNodeApi::getInstance()->resetAttribute(
+      m_nodeHandle, NODE_IMAGE_SRC));
   return *this;
 }
 } // namespace rnoh
