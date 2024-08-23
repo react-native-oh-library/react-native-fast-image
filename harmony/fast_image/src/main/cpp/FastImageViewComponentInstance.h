@@ -18,8 +18,10 @@ private:
     facebook::react::FastImageViewSourceStruct m_source;
     // used for find local cache of uri, if not find return uri
     std::string FindLocalCacheByUri(std::string const &uri);
+    void GetHeaderUri(std::string const &uri,std::vector<facebook::react::FastImageViewSourceHeadersStruct> const &header);
     std::string getBundlePath();
     std::string getAbsolutePathPrefix(std::string const &bundlePath);
+    std::optional<std::string> getTintColorFromDynamic(folly::dynamic value);
 
 public:
     FastImageViewComponentInstance(Context context);
@@ -36,6 +38,7 @@ public:
     FastImageNode &getLocalRootArkUINode() override;
     
     // ImageSourceResolver::ImageSourceUpdateListener
-    void onImageSourceCacheUpdate() override;
+    void onImageSourceCacheUpdate(std::string fileUri) override;
+    void onImageSourceCacheDownloadFileFail() override;
 };
 } // namespace rnoh

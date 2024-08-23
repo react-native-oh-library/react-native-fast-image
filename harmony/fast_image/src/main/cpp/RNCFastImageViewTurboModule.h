@@ -42,6 +42,7 @@ public:
     RNCFastImageViewTurboModule(const ArkTSTurboModule::Context ctx, const std::string name);
 
     void preload(facebook::jsi::Runtime &rt,const facebook::jsi::Value *args, size_t count);
+    void clearDiskCache(facebook::jsi::Runtime &rt);
 
 };
 

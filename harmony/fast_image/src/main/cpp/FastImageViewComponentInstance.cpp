@@ -5,8 +5,7 @@
 #include <iomanip>
 #include <react/renderer/core/ConcreteState.h>
 #include <sstream>
-#include <filemanagement/fileio/oh_fileio.h>
-#include<time.h>
+#include "colorUtils/Color.h"
 
 namespace rnoh {
 
@@ -16,7 +15,9 @@ const std::string RAWFILE_PREFIX = "resource://RAWFILE/assets/";
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
     : CppComponentInstance(std::move(context)),
       FastImageLoaderTurboModule::FastImageSourceResolver::ImageSourceUpdateListener(
-          (std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(m_deps->rnInstance.lock()->getTurboModule("FastImageLoader")))->m_FastImageSourceResolver) {
+          (std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(
+               m_deps->rnInstance.lock()->getTurboModule("FastImageLoader")))
+              ->m_FastImageSourceResolver) {
     this->getLocalRootArkUINode().setNodeDelegate(this);
     this->getLocalRootArkUINode().setInterpolation(ARKUI_IMAGE_INTERPOLATION_HIGH);
     this->getLocalRootArkUINode().setDraggable(false);
@@ -40,12 +41,40 @@ std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string cons
     if (!arkTsTurboModule) {
         return uri;
     }
-        
-    if(!arkTsTurboModule->m_FastImageSourceResolver){
-        return uri; 
-    }else {
-        return arkTsTurboModule->m_FastImageSourceResolver->resolveImageSources(*this,uri);
+
+    if (!arkTsTurboModule->m_FastImageSourceResolver) {
+        return uri;
+    } else {
+        return arkTsTurboModule->m_FastImageSourceResolver->resolveImageSources(*this, uri);
     }
+}
+
+void FastImageViewComponentInstance::GetHeaderUri(
+    std::string const &uri, std::vector<facebook::react::FastImageViewSourceHeadersStruct> const &header) {
+    auto rnInstance = m_deps->rnInstance.lock();
+    if (!rnInstance) {
+        m_eventEmitter->onFastImageError({});
+        return;
+    }
+    auto turboModule = rnInstance->getTurboModule("FastImageLoader");
+    if (!turboModule) {
+        m_eventEmitter->onFastImageError({});
+        return;
+    }
+    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(turboModule);
+    if (!arkTsTurboModule) {
+        m_eventEmitter->onFastImageError({});
+        return;
+    }
+    std::vector<ArkJS::IntermediaryArg> args;
+    args.push_back(uri);
+    folly::dynamic args_header = folly::dynamic::object();
+    for (auto it = header.begin(); it != header.end(); ++it) {
+        args_header[it->name] = it->value;
+    }
+    args.push_back(args_header);
+    arkTsTurboModule->callSync("prefetchImage", args);
+    return;
 }
 
 std::string FastImageViewComponentInstance::getBundlePath() {
@@ -76,6 +105,11 @@ std::string FastImageViewComponentInstance::getAbsolutePathPrefix(std::string co
     return prefix;
 }
 
+std::optional<std::string> FastImageViewComponentInstance::getTintColorFromDynamic(folly::dynamic value) {
+    auto rawPropsColor = (value.count("tintColor") > 0) ? std::optional(value["tintColor"].asString()) : std::nullopt;
+    return rawPropsColor;
+}
+
 void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &props) {
     CppComponentInstance::onPropsChanged(props);
     DLOG(INFO) << "[FastImage] Props->tinColor: " << props->tintColor;
@@ -96,8 +130,23 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
         m_uri = props->source.uri;
         std::string uri = FindLocalCacheByUri(m_uri);
         this->getLocalRootArkUINode().setAutoResize(true);
-        this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
-        
+
+        if (uri.empty()) {
+            if (!props->source.headers.empty()) {
+                this->getLocalRootArkUINode().resetSources();
+                GetHeaderUri(props->source.uri, props->source.headers);
+            } else {
+                this->getLocalRootArkUINode().resetSources();
+            }
+        } else {
+            if (!props->source.headers.empty() && uri.find("http", 0) == 0) {
+                this->getLocalRootArkUINode().resetSources();
+                GetHeaderUri(props->source.uri, props->source.headers);
+            } else {
+                this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+            }
+        }
+
         if (!m_uri.empty()) {
             onLoadStart();
         }
@@ -113,13 +162,23 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
         }
     }
 
-    if (!m_props || m_props->tintColor != props->tintColor) {
-        this->getLocalRootArkUINode().setTintColor(props->tintColor);
+    if (props->rawProps != nullptr) {
+        auto tintColor = getTintColorFromDynamic(props->rawProps);
+        if (tintColor.has_value()) {
+            auto tintColorValue = fastimage::Color::FromString(tintColor.value()).GetValue();
+            this->getLocalRootArkUINode().setTintColor(SharedColor(tintColorValue));
+        }
     }
 }
 
-void FastImageViewComponentInstance::onImageSourceCacheUpdate() {
-    this->getLocalRootArkUINode().setSources(m_uri, getAbsolutePathPrefix(getBundlePath()));
+void FastImageViewComponentInstance::onImageSourceCacheUpdate(std::string fileUri) {
+    this->getLocalRootArkUINode().setSources(fileUri, getAbsolutePathPrefix(getBundlePath()));
+}
+void FastImageViewComponentInstance::onImageSourceCacheDownloadFileFail() {
+    if (m_eventEmitter == nullptr) {
+        return;
+    }
+    m_eventEmitter->onFastImageError({});
 }
 
 // void FastImageViewComponentInstance::onStateChanged(SharedConcreteState const& state) {
@@ -149,14 +208,17 @@ void FastImageViewComponentInstance::onError(int32_t errorCode) {
     if (!m_isReload) {
         FastImageSource fastImageSource(m_source);
         std::string uri = fastImageSource.getUri();
-        this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
         m_isReload = true;
-        return;
+        if (uri.compare(m_source.uri)) {
+            this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+            return;
+        }
     }
     if (m_eventEmitter == nullptr) {
         return;
     }
     m_eventEmitter->onFastImageError({});
+    m_eventEmitter->onFastImageLoadEnd({});
 }
 
 void FastImageViewComponentInstance::onLoadStart() {
