@@ -179,6 +179,7 @@ void FastImageViewComponentInstance::onImageSourceCacheDownloadFileFail() {
         return;
     }
     m_eventEmitter->onFastImageError({});
+    m_eventEmitter->onFastImageLoadEnd({});
 }
 
 // void FastImageViewComponentInstance::onStateChanged(SharedConcreteState const& state) {
