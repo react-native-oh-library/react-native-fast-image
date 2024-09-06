@@ -130,20 +130,12 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
         m_uri = props->source.uri;
         std::string uri = FindLocalCacheByUri(m_uri);
         this->getLocalRootArkUINode().setAutoResize(true);
-
-        if (uri.empty()) {
-            if (!props->source.headers.empty()) {
-                this->getLocalRootArkUINode().resetSources();
-                GetHeaderUri(props->source.uri, props->source.headers);
-            } else {
-                this->getLocalRootArkUINode().resetSources();
-            }
+        
+        if (!props->source.headers.empty()) {
+            GetHeaderUri(props->source.uri, props->source.headers);
         } else {
-            if (!props->source.headers.empty() && uri.find("http", 0) == 0) {
-                this->getLocalRootArkUINode().resetSources();
-                GetHeaderUri(props->source.uri, props->source.headers);
-            } else {
-                this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
+            if(!uri.empty()){
+               this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath())); 
             }
         }
 
