@@ -64,6 +64,7 @@ public:
 
             if (auto it = remoteImageSourceMap.find(uri); it != remoteImageSourceMap.end()) {
                 if (it->second == FAST_IMAGE_SOURCE_PENDING) {
+                    addListenerForURI(uri, &listener);
                     return "";
                 }
                 uri = it->second;
