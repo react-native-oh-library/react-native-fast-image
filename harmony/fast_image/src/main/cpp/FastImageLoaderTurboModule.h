@@ -49,11 +49,6 @@ public:
 
         std::string resolveImageSources(ImageSourceUpdateListener &listener, std::string uri) {
             // Subscribe to get information about prefetched URIs.
-            if (uriListenersMap.find(uri) == uriListenersMap.end()) {
-                removeListener(&listener);
-                addListenerForURI(uri, &listener);
-            }
-
             if (auto it = remoteImageSourceMap.find(uri);
                 it == remoteImageSourceMap.end() || it->second == FAST_IMAGE_SOURCE_PENDING) {
                 auto resolvedFileUri = getPrefetchedImageFileUri(uri);
@@ -64,6 +59,7 @@ public:
 
             if (auto it = remoteImageSourceMap.find(uri); it != remoteImageSourceMap.end()) {
                 if (it->second == FAST_IMAGE_SOURCE_PENDING) {
+                    removeListener(&listener);
                     addListenerForURI(uri, &listener);
                     return "";
                 }
