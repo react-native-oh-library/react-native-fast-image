@@ -29,13 +29,18 @@ Uri::Uri(folly::StringPiece str) : hasAuthority_(false), port_(0) {
   if (UNLIKELY(!boost::regex_match(str.begin(), str.end(), match, uriRegex))) {
         //throw std::invalid_argument(to<std::string>("invalid URI ", str));
         //not throw exception
+        encodeUri_ = str;
         return;
   }
-
   scheme_ = submatch(match, 1);
   std::transform(scheme_.begin(), scheme_.end(), scheme_.begin(), ::tolower);
 
   folly::StringPiece authorityAndPath(match[2].first, match[2].second);
+  if (authorityAndPath.empty()) {
+    encodeUri_ = str;
+    return;
+  }
+    
   boost::cmatch authorityAndPathMatch;
   if (!boost::regex_match(
           authorityAndPath.begin(),
@@ -59,9 +64,8 @@ Uri::Uri(folly::StringPiece str) : hasAuthority_(false), port_(0) {
             authority.second,
             authorityMatch,
             authorityRegex)) {
-      throw std::invalid_argument(to<std::string>(
-          "invalid URI authority ",
-          folly::StringPiece(authority.first, authority.second)));
+      encodeUri_ = str;
+      return;
     }
 
     folly::StringPiece port(authorityMatch[4].first, authorityMatch[4].second);
@@ -69,8 +73,8 @@ Uri::Uri(folly::StringPiece str) : hasAuthority_(false), port_(0) {
       try {
         port_ = to<uint16_t>(port);
       } catch (folly::ConversionError const& e) {
-        throw std::invalid_argument(
-            folly::to<std::string>("invalid URI port: ", e.what()));
+        encodeUri_ = str;
+        return;
       }
     }
 
@@ -83,10 +87,15 @@ Uri::Uri(folly::StringPiece str) : hasAuthority_(false), port_(0) {
 
   query_ = submatch(match, 3);
   fragment_ = submatch(match, 4);
-    
+
   std::string subPrefix = scheme_ + "://";
   std::string source = str.str();
-  encodeUri_ = subPrefix + uriEncode(source.substr(subPrefix.length(), source.length()), "@#&=*+-_.,:!?()/~'%;$");
+  try {
+    encodeUri_ = subPrefix + uriEncode(source.substr(subPrefix.length(), source.length()), "@#&=*+-_.,:!?()/~'%;$");
+  } catch (...) {
+    encodeUri_ = str;
+    return;
+  }
 }
 
 std::string Uri::authority() const {
