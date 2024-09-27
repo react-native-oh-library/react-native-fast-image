@@ -181,8 +181,13 @@ FastImageNode& FastImageNode::setResizeMethod(std::string const& resizeMethod) {
 FastImageNode& FastImageNode::setAlt(std::string const& uri, std::string prefix) {
   if (!uri.empty()) {
     std::string resourceStr = prefix == "" ? RAWFILE_PREFIX : prefix;
+    ArkUI_AttributeItem item;
+  if (uri.rfind(ASSET_PREFIX, 0) == 0) {
     resourceStr += uri.substr(ASSET_PREFIX.size());
-    ArkUI_AttributeItem item = {.string = resourceStr.c_str()};
+    item = {.string = resourceStr.c_str()};
+  } else {
+    item = {.string = uri.c_str()};
+  }
     maybeThrow(NativeNodeApi::getInstance()->setAttribute(
         m_nodeHandle, NODE_IMAGE_ALT, &item));
   }
