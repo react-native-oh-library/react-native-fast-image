@@ -202,7 +202,7 @@ void FastImageViewComponentInstance::onError(int32_t errorCode) {
         FastImageSource fastImageSource(m_source);
         std::string uri = fastImageSource.getUri();
         m_isReload = true;
-        if (uri.compare(m_source.uri)) {
+        if (uri != m_source.uri) {
             this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath()));
             return;
         }
