@@ -1,8 +1,10 @@
-#pragma once
+#ifndef FASTIMAGEVIEWCOMPONENTINSTANCE_H
+#define FASTIMAGEVIEWCOMPONENTINSTANCE_H
 
 #include "EventEmitters.h"
 #include "FastImageNode.h"
-#include "FastImageLoaderTurboModule.h"
+#include "RNCFastImageViewTurboModule.h"
+#include "FastImageSourceResolver.h"
 #include "ShadowNodes.h"
 #include "RNOH/CppComponentInstance.h"
 #include "RNOH/arkui/ImageNode.h"
@@ -10,7 +12,7 @@
 namespace rnoh {
 class FastImageViewComponentInstance : public CppComponentInstance<facebook::react::FastImageViewShadowNode>,
                                        public FastImageNodeDelegate,
-                                       public FastImageLoaderTurboModule::FastImageSourceResolver::ImageSourceUpdateListener {
+                                       public FastImageSourceResolver::ImageSourceUpdateListener {
 private:
     FastImageNode m_imageNode;
     std::string m_uri;
@@ -38,7 +40,9 @@ public:
     FastImageNode &getLocalRootArkUINode() override;
     
     // ImageSourceResolver::ImageSourceUpdateListener
-    void onImageSourceCacheUpdate(std::string fileUri) override;
+    void onImageSourceCacheUpdate(std::string image) override;
     void onImageSourceCacheDownloadFileFail() override;
 };
 } // namespace rnoh
+
+#endif //FASTIMAGEVIEWCOMPONENTINSTANCE_H

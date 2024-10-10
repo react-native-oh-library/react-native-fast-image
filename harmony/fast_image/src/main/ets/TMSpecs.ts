@@ -6,9 +6,6 @@ export namespace RNCFastImageView {
   export type Source = {uri?: string, headers?: Object, priority?: string, cache?: string}
 
   export interface Spec {
-    clearMemoryCache(): Promise<void>;
-
-    clearDiskCache(): Promise<void>;
 
   }
 }

@@ -66,6 +66,15 @@ FastImageNode& FastImageNode::setSources(std::string const& uri, std::string pre
   } else {
     item = {.string = uri.c_str()};
   }
+
+  maybeThrow(NativeNodeApi::getInstance()->setAttribute(
+      m_nodeHandle, NODE_IMAGE_SRC, &item));
+  return *this;
+}
+
+FastImageNode& FastImageNode::setSources(ArkUI_DrawableDescriptor* image) {
+  ArkUI_AttributeItem item;
+  item = {.object = reinterpret_cast<void*>(image)};
   maybeThrow(NativeNodeApi::getInstance()->setAttribute(
       m_nodeHandle, NODE_IMAGE_SRC, &item));
   return *this;

@@ -2,7 +2,6 @@
 #include "ComponentDescriptors.h"
 #include "FastImageViewJSIBinder.h"
 #include "RNCFastImageViewTurboModule.h"
-#include "FastImageLoaderTurboModule.h"
 #include "FastImageViewComponentInstance.h"
 
 namespace rnoh {
@@ -24,8 +23,6 @@ public:
     SharedTurboModule createTurboModule(Context ctx, const std::string &name) const override {
         if (name == "RNCFastImageView") {
             return std::make_shared<RNCFastImageViewTurboModule>(ctx, name);
-        } else if (name == "FastImageLoader") {
-            return std::make_shared<FastImageLoaderTurboModule>(ctx, name);
         }
         return nullptr;
     };

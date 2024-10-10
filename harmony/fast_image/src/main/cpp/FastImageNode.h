@@ -24,6 +24,7 @@ class FastImageNode : public ArkUINode {
   FastImageNode();
   ~FastImageNode();
   FastImageNode& setSources(std::string const& uri, std::string prefix = "");
+  FastImageNode& setSources(ArkUI_DrawableDescriptor* image);
   FastImageNode& setResizeMode(facebook::react::ImageResizeMode const& mode);
   FastImageNode& setTintColor(facebook::react::SharedColor const& sharedColor);
   FastImageNode& setBlur(facebook::react::Float blur);
