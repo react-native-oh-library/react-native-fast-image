@@ -1,6 +1,6 @@
 #include "FastImageViewComponentInstance.h"
 #include "FastImageSource.h"
-#include "FastImageLoaderTurboModule.h"
+#include "RNCFastImageViewTurboModule.h"
 #include "Props.h"
 #include <iomanip>
 #include <react/renderer/core/ConcreteState.h>
@@ -14,9 +14,9 @@ const std::string RAWFILE_PREFIX = "resource://RAWFILE/assets/";
 
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
     : CppComponentInstance(std::move(context)),
-      FastImageLoaderTurboModule::FastImageSourceResolver::ImageSourceUpdateListener(
-          (std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(
-               m_deps->rnInstance.lock()->getTurboModule("FastImageLoader")))
+      FastImageSourceResolver::ImageSourceUpdateListener(
+          (std::dynamic_pointer_cast<rnoh::RNCFastImageViewTurboModule>(
+               m_deps->rnInstance.lock()->getTurboModule("RNCFastImageView")))
               ->m_FastImageSourceResolver) {
     this->getLocalRootArkUINode().setNodeDelegate(this);
     this->getLocalRootArkUINode().setInterpolation(ARKUI_IMAGE_INTERPOLATION_HIGH);
@@ -32,12 +32,12 @@ std::string FastImageViewComponentInstance::FindLocalCacheByUri(std::string cons
         return uri;
     }
 
-    auto turboModule = rnInstance->getTurboModule("FastImageLoader");
+    auto turboModule = rnInstance->getTurboModule("RNCFastImageView");
     if (!turboModule) {
         return uri;
     }
 
-    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(turboModule);
+    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::RNCFastImageViewTurboModule>(turboModule);
     if (!arkTsTurboModule) {
         return uri;
     }
@@ -56,24 +56,24 @@ void FastImageViewComponentInstance::GetHeaderUri(
         m_eventEmitter->onFastImageError({});
         return;
     }
-    auto turboModule = rnInstance->getTurboModule("FastImageLoader");
+    auto turboModule = rnInstance->getTurboModule("RNCFastImageView");
     if (!turboModule) {
         m_eventEmitter->onFastImageError({});
         return;
     }
-    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(turboModule);
+    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::RNCFastImageViewTurboModule>(turboModule);
     if (!arkTsTurboModule) {
         m_eventEmitter->onFastImageError({});
         return;
     }
-    std::vector<ArkJS::IntermediaryArg> args;
-    args.push_back(uri);
-    folly::dynamic args_header = folly::dynamic::object();
+    std::map<std::string, std::string> headersData;
     for (auto it = header.begin(); it != header.end(); ++it) {
-        args_header[it->name] = it->value;
+        headersData.insert_or_assign(it->name, it->value);
     }
-    args.push_back(args_header);
-    arkTsTurboModule->callSync("prefetchImage", args);
+    DownloadUri utils;
+    std::string fileUri = utils.getUri(uri);
+    arkTsTurboModule->m_FastImageSourceResolver->addListenerForURI(uri, this);
+    arkTsTurboModule->preload(uri,arkTsTurboModule->m_FastImageSourceResolver->fileCacheDir + fileUri,headersData);
     return;
 }
 
@@ -128,14 +128,16 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
         this->m_isReload = false;
         this->m_source = props->source;
         m_uri = props->source.uri;
-        std::string uri = FindLocalCacheByUri(m_uri);
+        std::string cache = FindLocalCacheByUri(m_uri);
         this->getLocalRootArkUINode().setAutoResize(true);
         
-        if (!props->source.headers.empty()) {
+        if (!props->source.headers.empty() && cache.empty()) {
             GetHeaderUri(props->source.uri, props->source.headers);
         } else {
-            if(!uri.empty()){
-               this->getLocalRootArkUINode().setSources(uri, getAbsolutePathPrefix(getBundlePath())); 
+            if(!cache.empty()){
+                this->getLocalRootArkUINode().setSources(cache);
+            } else {
+                this->getLocalRootArkUINode().setSources(m_uri, getAbsolutePathPrefix(getBundlePath())); 
             }
         }
 
@@ -163,8 +165,8 @@ void FastImageViewComponentInstance::onPropsChanged(SharedConcreteProps const &p
     }
 }
 
-void FastImageViewComponentInstance::onImageSourceCacheUpdate(std::string fileUri) {
-    this->getLocalRootArkUINode().setSources(fileUri, getAbsolutePathPrefix(getBundlePath()));
+void FastImageViewComponentInstance::onImageSourceCacheUpdate(std::string image) {
+    this->getLocalRootArkUINode().setSources("file://"+ image);
 }
 void FastImageViewComponentInstance::onImageSourceCacheDownloadFileFail() {
     if (m_eventEmitter == nullptr) {
@@ -173,13 +175,6 @@ void FastImageViewComponentInstance::onImageSourceCacheDownloadFileFail() {
     m_eventEmitter->onFastImageError({});
     m_eventEmitter->onFastImageLoadEnd({});
 }
-
-// void FastImageViewComponentInstance::onStateChanged(SharedConcreteState const& state) {
-//   CppComponentInstance::onStateChanged(state);
-//   auto vector = {state->getData().getImageSource()};
-//   this->getLocalRootArkUINode().setSources(vector);
-//   this->getLocalRootArkUINode().setBlur(state->getData().getBlurRadius());
-// }
 
 FastImageNode &FastImageViewComponentInstance::getLocalRootArkUINode() { return m_imageNode; }
 
@@ -190,6 +185,7 @@ void FastImageViewComponentInstance::onProgress(uint32_t loaded, uint32_t total)
 }
 
 void FastImageViewComponentInstance::onComplete(float width, float height) {
+
     if (m_eventEmitter == nullptr) {
         return;
     }

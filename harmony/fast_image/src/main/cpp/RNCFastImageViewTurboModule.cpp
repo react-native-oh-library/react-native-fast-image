@@ -30,12 +30,15 @@
  */
 
 #include "RNCFastImageViewTurboModule.h"
-#include "FastImageLoaderTurboModule.h"
 #include "RNOH/ArkTSTurboModule.h"
-#include "RNOH/RNInstance.h"
+#include "RNOH/RNInstanceCAPI.h"
+#include "downloadUtils/DownloadUri.h"
+#include "downloadUtils/HttpTaskProcessor.h"
+#include <filesystem>
 
 using namespace rnoh;
 using namespace facebook;
+namespace fs = std::filesystem;
 
 static jsi::Value hostFunction_RNCFastImageViewTurboModule_preload(jsi::Runtime &rt, react::TurboModule &turboModule,
                                                                    const jsi::Value *args, size_t count) {
@@ -44,64 +47,80 @@ static jsi::Value hostFunction_RNCFastImageViewTurboModule_preload(jsi::Runtime 
     return jsi::Value::null();
 }
 void RNCFastImageViewTurboModule::preload(facebook::jsi::Runtime &rt, const facebook::jsi::Value *args, size_t count) {
-    auto rnInstance = m_ctx.instance.lock();
-    auto turboModule = rnInstance->getTurboModule("FastImageLoader");
-    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::ArkTSTurboModule>(turboModule);
+    if(count == 0)
+        return;
+    
     facebook::jsi::Array sources = args[0].asObject(rt).asArray(rt);
-
     for (int i = 0; i < sources.size(rt); i++) {
         auto value = sources.getValueAtIndex(rt, i);
         if (!value.isObject())
             continue;
         auto source = value.getObject(rt);
         if (source.hasProperty(rt, "uri")) {
-            if (source.hasProperty(rt, "headers")) {
-                facebook::jsi::Value args[2] = {source.getProperty(rt, "uri"), source.getProperty(rt, "headers")};
-                arkTsTurboModule->callAsync(rt, "prefetchImage", args, 2);
+            std::string uri = source.getProperty(rt, "uri").toString(rt).utf8(rt);
+            //磁盘有无缓存文件，有则不执行
+            DownloadUri utils;
+            std::string fileUri = utils.getUri(uri);
+            bool diskCache = m_FastImageSourceResolver->remoteImageSourceMap.get(fileUri);
+            if (!diskCache) {
+                m_FastImageSourceResolver->pendingSet.insert(fileUri);
             } else {
-                facebook::jsi::Value args[1] = {source.getProperty(rt, "uri")};
-                arkTsTurboModule->callAsync(rt, "prefetchImage", args, 1);
+                return;
             }
+            
+            fileUri = fileCacheDir + fileUri;
+            std::map<std::string, std::string> headersData;
+            if (source.hasProperty(rt, "headers")) {
+                auto headers = source.getProperty(rt, "headers").asObject(rt);
+                headers.asHostObject(rt)->getPropertyNames(rt);
+                auto props = source.getProperty(rt, "headers").asObject(rt).getPropertyNames(rt);
+                int propsSize = props.size(rt);
+                for (int i =0; i<propsSize; i++) {
+                    auto headersKey = props.getValueAtIndex(rt, i).asString(rt);
+                    headersData.insert({
+                        headersKey.utf8(rt),
+                        headers.getProperty(rt, headersKey).asString(rt).utf8(rt)
+                    });
+                }
+            }
+                
+            preload(uri,fileUri,headersData);
         }
     }
     return;
 }
 
+void RNCFastImageViewTurboModule::preload(std::string uri,std::string fileUri,const std::map<std::string, std::string>& headers){
+    HttpTaskProcessor* processor = new HttpTaskProcessor();
+    processor->instance = m_FastImageSourceResolver;
+    processor->filePath_ = fileUri;
+    if (headers.size() == 0)  {
+        processor->launchHttpRequest(uri.c_str());
+    } else {
+        processor->launchHttpRequest(uri.c_str(),headers);
+    }
+}
+
 static jsi::Value hostFunction_RNCFastImageViewTurboModule_clearMemoryCache(jsi::Runtime &rt,
                                                                             react::TurboModule &turboModule,
                                                                             const jsi::Value *args, size_t count) {
-    return static_cast<ArkTSTurboModule &>(turboModule).callAsync(rt, "clearMemoryCache", args, count);
+    auto self = static_cast<RNCFastImageViewTurboModule *>(&turboModule);
+    return jsi::Value(self->clearMemoryCache());
+}
+
+bool RNCFastImageViewTurboModule::clearMemoryCache() {
+    return true;
 }
 
 static jsi::Value hostFunction_RNCFastImageViewTurboModule_clearDiskCache(jsi::Runtime &rt,
                                                                           react::TurboModule &turboModule,
                                                                           const jsi::Value *args, size_t count) {
     auto self = static_cast<RNCFastImageViewTurboModule *>(&turboModule);
-    self->clearDiskCache(rt);
-    return self->callAsync(rt, "clearDiskCache", args, count);
+    return jsi::Value(self->clearDiskCache());
 }
-void RNCFastImageViewTurboModule::clearDiskCache(facebook::jsi::Runtime &rt) {
-    auto rnInstance = m_ctx.instance.lock();
-    if (!rnInstance) {
-        return;
-    }
 
-    auto turboModule = rnInstance->getTurboModule("FastImageLoader");
-    if (!turboModule) {
-        return;
-    }
-
-    auto arkTsTurboModule = std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(turboModule);
-    if (!arkTsTurboModule) {
-        return;
-    }
-
-    if (!arkTsTurboModule->m_FastImageSourceResolver) {
-        return;
-    } else {
-        arkTsTurboModule->m_FastImageSourceResolver->clearRemoteImageSourceMap();
-        return;
-    }
+bool RNCFastImageViewTurboModule::clearDiskCache() {
+    return this->m_FastImageSourceResolver->remoteImageSourceMap.clearAll();
 }
 
 RNCFastImageViewTurboModule::RNCFastImageViewTurboModule(const ArkTSTurboModule::Context ctx, const std::string name)
@@ -109,4 +128,17 @@ RNCFastImageViewTurboModule::RNCFastImageViewTurboModule(const ArkTSTurboModule:
     methodMap_["preload"] = MethodMetadata{0, hostFunction_RNCFastImageViewTurboModule_preload};
     methodMap_["clearMemoryCache"] = MethodMetadata{0, hostFunction_RNCFastImageViewTurboModule_clearMemoryCache};
     methodMap_["clearDiskCache"] = MethodMetadata{0, hostFunction_RNCFastImageViewTurboModule_clearDiskCache};
+    
+    auto cache = this->callSync("getCacheDir", {});
+    fileCacheDir = cache.asString()+"/";
+    m_FastImageSourceResolver =  std::make_shared<FastImageSourceResolver>(fileCacheDir);
+    
+    fs::path directoryPath = fileCacheDir;
+    if (fs::exists(directoryPath) && fs::is_directory(directoryPath)) {
+        for (const auto& entry : fs::directory_iterator(directoryPath)) {
+            if (fs::is_regular_file(entry.path())) {
+                m_FastImageSourceResolver->remoteImageSourceMap.put(entry.path().filename(),true);
+            }
+        }
+    }
 }
