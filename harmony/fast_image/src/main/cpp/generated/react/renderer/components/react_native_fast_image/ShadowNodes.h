@@ -9,9 +9,10 @@
  */
 
 #pragma once
-#include "Props.h"
-#include "States.h"
-#include "EventEmitters.h"
+
+#include <react/renderer/components/react_native_fast_image/EventEmitters.h>
+#include <react/renderer/components/react_native_fast_image/Props.h>
+#include <react/renderer/components/react_native_fast_image/States.h>
 #include <react/renderer/components/view/ConcreteViewShadowNode.h>
 #include <jsi/jsi.h>
 

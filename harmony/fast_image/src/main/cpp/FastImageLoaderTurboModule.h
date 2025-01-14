@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved
+ * Use of this source code is governed by a MIT license that can be
+ * found in the LICENSE file.
+ */
+
 #pragma once
 
-#include "Props.h"
-#include "RNOH/ArkTSTurboModule.h"
+#include <react/renderer/components/react_native_fast_image/Props.h>
 #include <ReactCommon/RuntimeExecutor.h>
 #include <react/renderer/imagemanager/primitives.h>
+#include "RNOH/ArkTSTurboModule.h"
 #include "FastImageLoaderTurboModule.h"
 #include "RNOH/ArkTSMessageHub.h"
 #include "RNOH/Assert.h"

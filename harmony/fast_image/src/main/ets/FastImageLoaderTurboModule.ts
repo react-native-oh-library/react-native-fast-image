@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved
+ * Use of this source code is governed by a MIT license that can be
+ * found in the LICENSE file.
+ */
 
 import {
   RemoteImageDiskCache,
@@ -7,15 +12,16 @@ import {
 } from './FastRemoteImageLoader';
 import image from '@ohos.multimedia.image';
 import { RemoteImageSource } from './FastRemoteImageLoader/RemoteImageSource';
-import { TurboModule, TurboModuleContext } from '@rnoh/react-native-openharmony/ts';
+import { TurboModule, RNOHLogger, TurboModuleContext } from '@rnoh/react-native-openharmony/ts';
 
 export class FastImageLoaderTurboModule extends TurboModule {
   static NAME = "FastImageLoader" as const
-
+  private logger: RNOHLogger;
   private imageLoader: RemoteImageLoader
 
   constructor(protected ctx: TurboModuleContext) {
     super(ctx)
+    this.logger = ctx.logger.clone("RNCFastImageLoader");
     this.imageLoader = new RemoteImageLoader(
       new RemoteImageMemoryCache(128), new RemoteImageDiskCache(128, ctx.uiAbilityContext.cacheDir), ctx.uiAbilityContext,
       ({ remoteUri, fileUri }) => {
@@ -66,7 +72,7 @@ export class FastImageLoaderTurboModule extends TurboModule {
   }
 
   public prefetchImageWithMetadata(uri: string, queryRootName: string, rootTag: number): Promise<boolean> {
-    this.ctx.logger.warn("ImageLoader::prefetchImageWithMetadata is not supported")
+    this.logger.warn("ImageLoader::prefetchImageWithMetadata is not supported")
     return Promise.resolve(false)
   }
 

@@ -1,7 +1,13 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved
+ * Use of this source code is governed by a MIT license that can be
+ * found in the LICENSE file.
+ */
+
 #include "FastImageViewComponentInstance.h"
 #include "FastImageSource.h"
 #include "FastImageLoaderTurboModule.h"
-#include "Props.h"
+#include <react/renderer/components/react_native_fast_image/Props.h>
 #include <iomanip>
 #include <react/renderer/core/ConcreteState.h>
 #include <sstream>
@@ -13,7 +19,7 @@ const std::string BUNDLE_HARMONY_JS = "bundle.harmony.js";
 const std::string RAWFILE_PREFIX = "resource://RAWFILE/assets/";
 
 FastImageViewComponentInstance::FastImageViewComponentInstance(Context context)
-    : CppComponentInstance(std::move(context)),
+    : BaseFastImageViewComponentInstance(std::move(context)),
       FastImageLoaderTurboModule::FastImageSourceResolver::ImageSourceUpdateListener(
           (std::dynamic_pointer_cast<rnoh::FastImageLoaderTurboModule>(
                m_deps->rnInstance.lock()->getTurboModule("FastImageLoader")))

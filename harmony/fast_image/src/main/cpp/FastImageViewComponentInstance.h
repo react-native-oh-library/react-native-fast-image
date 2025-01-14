@@ -1,14 +1,20 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved
+ * Use of this source code is governed by a MIT license that can be
+ * found in the LICENSE file.
+ */
+
 #pragma once
 
-#include "EventEmitters.h"
+#include <react/renderer/components/react_native_fast_image/EventEmitters.h>
+#include <react/renderer/components/react_native_fast_image/ShadowNodes.h>
 #include "FastImageNode.h"
 #include "FastImageLoaderTurboModule.h"
-#include "ShadowNodes.h"
-#include "RNOH/CppComponentInstance.h"
+#include "RNOH/generated/components/BaseFastImageViewComponentInstance.h"
 #include "RNOH/arkui/ImageNode.h"
 
 namespace rnoh {
-class FastImageViewComponentInstance : public CppComponentInstance<facebook::react::FastImageViewShadowNode>,
+class FastImageViewComponentInstance : public BaseFastImageViewComponentInstance,
                                        public FastImageNodeDelegate,
                                        public FastImageLoaderTurboModule::FastImageSourceResolver::ImageSourceUpdateListener {
 private:

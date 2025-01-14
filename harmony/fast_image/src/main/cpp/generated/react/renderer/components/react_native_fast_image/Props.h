@@ -15,7 +15,6 @@
 #include <react/renderer/core/propsConversions.h>
 #include <react/renderer/graphics/Color.h>
 #include <vector>
-#include <react/renderer/imagemanager/primitives.h>
 
 namespace facebook {
 namespace react {
@@ -37,7 +36,6 @@ static inline std::string toString(const FastImageViewPriority &value) {
     case FastImageViewPriority::High: return "high";
   }
 }
-
 enum class FastImageViewCache { Immutable, Web, CacheOnly };
 
 static inline void fromRawValue(const PropsParserContext& context, const RawValue &value, FastImageViewCache &result) {
@@ -59,7 +57,7 @@ enum class FastImageViewResizeMode { Contain, Cover, Stretch, Center };
 
 static inline void fromRawValue(const PropsParserContext& context, const RawValue &value, FastImageViewResizeMode &result) {
   auto string = (std::string)value;
-  if (string == "contain") { result =FastImageViewResizeMode::Contain; return; }
+  if (string == "contain") { result = FastImageViewResizeMode::Contain; return; }
   if (string == "cover") { result = FastImageViewResizeMode::Cover; return; }
   if (string == "stretch") { result = FastImageViewResizeMode::Stretch; return; }
   if (string == "center") { result = FastImageViewResizeMode::Center; return; }

@@ -1,6 +1,14 @@
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved
+ * Use of this source code is governed by a MIT license that can be
+ * found in the LICENSE file.
+ */
+
+#pragma once
+
 #include "RNOH/Package.h"
-#include "ComponentDescriptors.h"
-#include "FastImageViewJSIBinder.h"
+#include <react/renderer/components/react_native_fast_image/ComponentDescriptors.h>
+#include "RNOH/generated/components/FastImageViewJSIBinder.h"
 #include "RNCFastImageViewTurboModule.h"
 #include "FastImageLoaderTurboModule.h"
 #include "FastImageViewComponentInstance.h"

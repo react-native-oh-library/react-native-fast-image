@@ -1,6 +1,11 @@
-#include "FastImageNode.h"
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd. All rights reserved
+ * Use of this source code is governed by a MIT license that can be
+ * found in the LICENSE file.
+ */
 
 #include <string_view>
+#include "FastImageNode.h"
 #include "RNOH/arkui/NativeNodeApi.h"
 
 static constexpr ArkUI_NodeEventType IMAGE_NODE_EVENT_TYPES[] = {
