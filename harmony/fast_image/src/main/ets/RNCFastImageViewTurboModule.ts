@@ -5,7 +5,6 @@
  */
 
 import { TurboModule, RNOHLogger, TurboModuleContext } from '@rnoh/react-native-openharmony/ts';
-import { FastImageLoaderTurboModule } from './FastImageLoaderTurboModule';
 import { RNCFastImageView } from "./generated/turboModules/RNCFastImageView"
 
 export class RNCFastImageViewTurboModule extends TurboModule implements RNCFastImageView.Spec {
@@ -17,24 +16,19 @@ export class RNCFastImageViewTurboModule extends TurboModule implements RNCFastI
   }
 
   preload(sources: RNCFastImageView.Source[]): void {
-    // NO-OP Implemented in C++
+    this.logger.warn(`ArkTS preload() has not been implemented yet.`)
+    // TODO 调用 imageknife 的 ArkTS preload 接口（若无C++接口）
   }
 
   clearMemoryCache(): Promise<void> {
-    let imageLoaderTurboModule: FastImageLoaderTurboModule = this.ctx.rnInstance.getTurboModule("FastImageLoader");
-    return imageLoaderTurboModule.memoryCacheClear();
+    this.logger.warn(`ArkTS clearMemoryCache() has not been implemented yet.`)
+    // TODO 调用imageknife 的 ArkTS 清除内存缓存接口（若无C++接口）
+    return;
   }
 
   clearDiskCache(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      let imageLoaderTurboModule: FastImageLoaderTurboModule = this.ctx.rnInstance.getTurboModule("FastImageLoader");
-      try {
-        imageLoaderTurboModule.diskCacheClear();
-      } catch (e) {
-        this.logger.error("clearDiskCache BusinessError code:" + e.code)
-        reject("clearDiskCache BusinessError code:" + e.code)
-      }
-      resolve(null)
-    });
+    this.logger.warn(`ArkTS clearDiskCache() has not been implemented yet.`)
+    // TODO 调用 imageknife 的 ArkTS 清除磁盘缓存接口（若无C++接口）
+    return;
   }
 }

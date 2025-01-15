@@ -6,49 +6,40 @@
 
 #pragma once
 
-#include <react/renderer/imagemanager/primitives.h>
 #include "RNOH/arkui/ArkUINode.h"
 
 namespace rnoh {
 
+/**
+ * fast-image原生事件委托对象类，FastImageNode 可以通过 FastImageNodeDelegate 通知外部有关事件
+ */
 class FastImageNodeDelegate {
- public:
-  virtual ~FastImageNodeDelegate() = default;
-  virtual void onComplete(float width, float height){};
-  virtual void onError(int32_t errorCode){};
-  virtual void onProgress(uint32_t loaded, uint32_t total){};
+public:
+    virtual ~FastImageNodeDelegate() = default;
+    /**
+     * @brief 处理加载完成事件
+     * @param width
+     * @param height
+     */
+    virtual void onComplete(float width, float height){};
+    virtual void onError(int32_t errorCode){};
+    virtual void onProgress(uint32_t loaded, uint32_t total){};
 };
 
 class FastImageNode : public ArkUINode {
- protected:
-  ArkUI_NodeHandle m_childArkUINodeHandle;
-  FastImageNodeDelegate* m_fastImageNodeDelegate;
+protected:
+    FastImageNodeDelegate *m_fastImageNodeDelegate;
 
- public:
-  FastImageNode();
-  ~FastImageNode();
-  FastImageNode& setSources(std::string const& uri, std::string prefix = "");
-  FastImageNode& setResizeMode(facebook::react::ImageResizeMode const& mode);
-  FastImageNode& setTintColor(facebook::react::SharedColor const& sharedColor);
-  FastImageNode& setBlur(facebook::react::Float blur);
-  FastImageNode& setObjectRepeat(
-      facebook::react::ImageResizeMode const& resizeMode);
-  FastImageNode& setCapInsets(facebook::react::EdgeInsets const& capInsets, float dpi);
+public:
+    FastImageNode();
+    ~FastImageNode();
 
-  FastImageNode& setInterpolation(int32_t interpolation);
-  FastImageNode& setDraggable(bool draggable);
-  FastImageNode& setFocusable(bool focusable);
-  FastImageNode& setResizeMethod(std::string const& resizeMethod);
-  FastImageNode& setAlt(std::string const& uri, std::string prefix = "");
-  FastImageNode& setFadeDuration(int32_t duration);
+    FastImageNode &setSources(std::string const &uri);
+    FastImageNode &setInterpolation(int32_t interpolation);
+    FastImageNode &setDraggable(bool draggable);
+    // TODO 提供更多的属性设置API
 
-  FastImageNode& resetFocusable();
-  FastImageNode& resetResizeMethod();
-  FastImageNode& setAutoResize(bool autoResize);
-  FastImageNode& resetSources();
-
-  void onNodeEvent(ArkUI_NodeEventType eventType, EventArgs& eventArgs)
-      override;
-  void setNodeDelegate(FastImageNodeDelegate* fastImageNodeDelegate);
+    void onNodeEvent(ArkUI_NodeEventType eventType, EventArgs &eventArgs) override;
+    void setNodeDelegate(FastImageNodeDelegate *fastImageNodeDelegate);
 };
 } // namespace rnoh
