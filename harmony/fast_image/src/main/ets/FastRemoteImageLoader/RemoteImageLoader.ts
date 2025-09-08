@@ -132,6 +132,8 @@ export class RemoteImageLoader {
 
   public async prefetch(uri: string, headers?: object): Promise<boolean> {
     if (this.diskCache.has(uri)) {
+      const fileUri = `file://${this.diskCache.getLocation(uri)}`;
+      this.onDiskCacheUpdate({ remoteUri: uri, fileUri });
       return true;
     }
 
