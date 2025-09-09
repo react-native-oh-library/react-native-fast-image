@@ -73,6 +73,7 @@ void FastImageViewComponentInstance::GetHeaderUri(
         args_header[it->name] = it->value;
     }
     args.push_back(args_header);
+    arkTsTurboModule->m_FastImageSourceResolver->addListenerForURI(uri, this);
     arkTsTurboModule->callSync("prefetchImage", args);
     return;
 }
