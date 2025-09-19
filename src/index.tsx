@@ -41,6 +41,7 @@ import {
 } from 'react-native'
 import FastImageView from './FastImageViewNativeComponent';
 import RNCFastImageView from './NativeFastImage';
+import FastImageLoader from './FastImageLoader';
 
 export type ResizeMode = 'contain' | 'cover' | 'stretch' | 'center'
 
@@ -265,6 +266,7 @@ const FastImageComponent: React.ComponentType<FastImageProps> = forwardRef(
 )
 
 FastImageComponent.displayName = 'FastImage'
+FastImageLoader.displayName = '_image_loader_'
 
 export interface FastImageStaticProperties {
     resizeMode: typeof resizeMode
